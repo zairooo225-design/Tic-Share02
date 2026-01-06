@@ -65,7 +65,7 @@
     // CONFIGURATION
     // IMPORTANT: Use direct image links format: https://i.imgur.com/IMAGE_ID.png
     // Not album links like: https://imgur.com/a/ALBUM_ID
-    const ITSHARE_URL = "https://example.com"; // Your ITShare URL (will redirect here)
+    const ITSHARE_URL = "https://imgur.com/a/3bfKVnz"; // Your ITShare URL (will redirect here)
     const ITSHARE_LOADING_IMAGE_URL = "https://i.imgur.com/CyV8q0M.png"; // ITSharing loading logo
     const LOBBY_IMAGE_URL = "https://i.imgur.com/pGB9giE.png"; // Main lobby image (user selection page)
 
@@ -158,6 +158,7 @@
       const [editNoteText, setEditNoteText] = useState('');
       const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
       const [showITShareLoading, setShowITShareLoading] = useState(false);
+      const [deleteConfirm, setDeleteConfirm] = useState({ show: false, type: '', id: null, step: 1 });
       const SPECIAL_KEY = '1233';
       const MAX_NAME_LENGTH = 20;
 
@@ -548,6 +549,49 @@
                   <p className="text-black mb-2">Damn u really use a lot of storage, you gotta clean them stuff to keep uploading stuff bruh</p>
                   <p className="text-gray-600 text-sm mb-6">Error: Bruh01</p>
                   <button onClick={() => setShowStorageWarning(false)} className="w-full bg-black text-white rounded-2xl py-4 font-bold hover:bg-gray-800 transition-all">Okay</button>
+                </div>
+              </div>
+            )}
+
+            {deleteConfirm.show && (
+              <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 animate-fadeIn">
+                <div className="bg-white rounded-3xl p-8 shadow-2xl max-w-md w-full animate-scaleIn">
+                  <div className="text-center mb-6">
+                    <div className="text-6xl mb-4">⚠️</div>
+                    <h2 className="text-3xl font-bold text-black mb-4">
+                      {deleteConfirm.step === 1 ? 'Are you sure?' : 'Are you sure sure sure???'}
+                    </h2>
+                    <p className="text-gray-600">
+                      {deleteConfirm.step === 1 
+                        ? `You are about to delete this ${deleteConfirm.type}.`
+                        : `This is your last chance! Delete this ${deleteConfirm.type}?`
+                      }
+                    </p>
+                  </div>
+                  <div className="flex gap-3">
+                    <button 
+                      onClick={() => {
+                        if (deleteConfirm.step === 1) {
+                          setDeleteConfirm({ ...deleteConfirm, step: 2 });
+                        } else {
+                          if (deleteConfirm.type === 'file') {
+                            handleDeleteFile(deleteConfirm.id);
+                          } else {
+                            handleDeleteNote(deleteConfirm.id);
+                          }
+                        }
+                      }} 
+                      className="flex-1 bg-red-500 text-white rounded-2xl py-4 font-bold hover:bg-red-600 transition-all"
+                    >
+                      {deleteConfirm.step === 1 ? 'Yes, delete' : 'Yes, DELETE IT!'}
+                    </button>
+                    <button 
+                      onClick={() => setDeleteConfirm({ show: false, type: '', id: null, step: 1 })} 
+                      className="flex-1 bg-gray-200 text-black rounded-2xl py-4 font-bold hover:bg-gray-300 transition-all"
+                    >
+                      Cancel
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
