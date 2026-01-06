@@ -40,6 +40,11 @@
     .profile-glow:hover { box-shadow: 0 0 30px rgba(255,255,255,0.8); transition: 0.3s; }
     .card-hover { transition: all 0.3s ease; }
     .card-hover:hover { transform: translateY(-5px); box-shadow: 0 12px 40px rgba(255, 255, 255, 0.1); }
+    .profile-card { transition: all 0.3s ease; }
+    .profile-card:hover { 
+      transform: scale(1.02); 
+      box-shadow: 0 0 0 2px rgba(156, 163, 175, 0.5), 0 8px 24px rgba(0, 0, 0, 0.15);
+    }
     
     .notification {
       position: fixed; top: 20px; right: 20px; z-index: 9999;
@@ -475,9 +480,9 @@
               </div>
               <div className="space-y-4">
                 {Object.entries(users).map(([userId, user], index) => (
-                  <div key={userId} onClick={() => handleUserSelect(userId)} className={`bg-white rounded-3xl p-6 cursor-pointer card-hover animate-slideUp delay-${index + 1}`}>
+                  <div key={userId} onClick={() => handleUserSelect(userId)} className={`bg-white rounded-3xl p-6 cursor-pointer profile-card animate-slideUp delay-${index + 1}`}>
                     <div className="flex items-center gap-4">
-                      <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-gray-300 flex-shrink-0 profile-glow">
+                      <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-gray-300 flex-shrink-0">
                         <img src={user.icon} alt={user.name} className="w-full h-full object-cover" />
                       </div>
                       <h2 className="text-xl font-bold text-black flex-1">{user.name}</h2>
@@ -500,30 +505,27 @@
             <div className={`notification ${showNotification.type}`}>{showNotification.message}</div>
           )}
 
-          {showDeleteConfirm && (
-            <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 animate-fadeIn">
-              <div className="bg-white rounded-3xl p-8 shadow-2xl max-w-md w-full animate-scaleIn">
-                <div className="text-center mb-6">
-                  <div className="text-6xl mb-4">⚠️</div>
-                  <h2 className="text-3xl font-bold text-black mb-4">
-                    {deleteStep === 1 ? 'Are you sure?' : 'Are you sure sure sure???'}
-                  </h2>
-                  <p className="text-gray-600">
-                    {deleteStep === 1 
-                      ? `You are about to delete this ${deleteTarget.type}.`
-                      : `This is your last chance! Delete this ${deleteTarget.type}?`
-                    }
-                  </p>
-                </div>
-                <div className="flex gap-3">
-                  <button onClick={proceedDelete} className="flex-1 bg-red-500 text-white rounded-2xl py-4 font-bold hover:bg-red-600 transition-all">
-                    {deleteStep === 1 ? 'Yes, delete' : 'Yes, DELETE IT!'}
-                  </button>
-                  <button onClick={() => { setShowDeleteConfirm(false); setDeleteStep(1); setDeleteTarget({ type: '', id: null }); }} className="flex-1 bg-gray-200 text-black rounded-2xl py-4 font-bold hover:bg-gray-300 transition-all">Cancel</button>
+            {showDeleteConfirm && (
+              <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[9999] p-4 animate-fadeIn">
+                <div className="bg-white rounded-3xl p-8 shadow-2xl max-w-md w-full animate-scaleIn">
+                  <div className="text-center mb-6">
+                    <div className="text-6xl mb-4">⚠️</div>
+                    <h2 className="text-2xl font-bold text-black mb-2">
+                      {deleteStep === 1 ? 'Are you sure you want to delete this?' : 'Are you absolutely sure?'}
+                    </h2>
+                    <p className="text-gray-500 text-sm">
+                      {deleteStep === 1 ? 'This action cannot be undone.' : 'Last chance to cancel!'}
+                    </p>
+                  </div>
+                  <div className="flex gap-3">
+                    <button onClick={proceedDelete} className="flex-1 bg-red-500 text-white rounded-2xl py-4 font-bold hover:bg-red-600 transition-all">
+                      Delete
+                    </button>
+                    <button onClick={() => { setShowDeleteConfirm(false); setDeleteStep(1); setDeleteTarget({ type: '', id: null }); }} className="flex-1 bg-gray-200 text-black rounded-2xl py-4 font-bold hover:bg-gray-300 transition-all">Cancel</button>
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
 
           {!editingProfile && (
             <button
