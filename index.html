@@ -15,7 +15,14 @@
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-database-compat.js"></script>
   
   <style>
-    /* --- ANIMATION & STYLES --- */
+    /* --- 2025 PREMIUM ANIMATION SYSTEM --- */
+    :root {
+      /* Microsoft Fluent / Apple iOS style premium easing */
+      --ease-morph: cubic-bezier(0.2, 0.0, 0.2, 1.0); /* Standard Morph */
+      --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1.0); /* Subtle overshoot */
+      --ease-out-expo: cubic-bezier(0.19, 1, 0.22, 1);
+    }
+
     body {
       margin: 0;
       background: #000;
@@ -26,70 +33,95 @@
       touch-action: manipulation;
     }
 
-    /* 3D Perspective Stage - Required for the flip effect */
+    /* 3D Stage - Critical for the Fold/Flip Illusion */
     .perspective-stage {
-      perspective: 1500px;
-      perspective-origin: center center;
+      perspective: 1200px;
       transform-style: preserve-3d;
+      height: 100vh;
+      width: 100vw;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
     }
 
-    /* The Galaxy Z Flip Motion */
+    /* --- THE SAMSUNG Z FLIP OPEN ANIMATION --- */
+    /* Simulates a folded device opening up to reveal content */
     @keyframes samsungFlipOpen {
       0% {
         opacity: 0;
-        transform: rotateX(-95deg) scale(0.8) translateY(50px);
-        filter: brightness(0.5);
-      }
-      50% {
-        opacity: 1;
-        /* Elastic Overshoot */
-        transform: rotateX(10deg) scale(1.02);
-        filter: brightness(1.2);
-      }
-      75% {
-        transform: rotateX(-5deg) scale(0.98);
+        /* Start folded shut (90 degrees), slightly smaller, and lower */
+        transform: rotateX(-90deg) scale(0.8) translateY(100px);
+        filter: brightness(0.2) blur(10px);
       }
       100% {
         opacity: 1;
-        transform: rotateX(0deg) scale(1);
-        filter: brightness(1);
+        /* End fully open (0 degrees), full scale */
+        transform: rotateX(0deg) scale(1) translateY(0);
+        filter: brightness(1) blur(0px);
       }
     }
 
     .animate-flip-open {
-      animation: samsungFlipOpen 1.0s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-      transform-origin: top center;
+      /* Using morph easing for a sophisticated, non-bouncy feel */
+      animation: samsungFlipOpen 0.8s var(--ease-out-expo) forwards;
+      transform-origin: top center; /* The hinge is at the top */
       backface-visibility: hidden;
+      will-change: transform, opacity, filter;
     }
 
-    /* Standard Animations */
-    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-    @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-    @keyframes slideInRight { from { transform: translateX(20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-    @keyframes scaleIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    /* --- GLOBAL MORPH ANIMATIONS --- */
+    @keyframes morphFadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+    @keyframes slideUpMorph { from { opacity: 0; transform: translateY(40px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
+    @keyframes slideRightMorph { from { opacity: 0; transform: translateX(30px); } to { opacity: 1; transform: translateX(0); } }
+
+    .animate-morph { animation: morphFadeIn 0.6s var(--ease-morph) forwards; }
+    .animate-slide-up { animation: slideUpMorph 0.7s var(--ease-out-expo) forwards; }
+    .animate-slide-right { animation: slideRightMorph 0.6s var(--ease-out-expo) forwards; }
+
+    /* Ambient Effects */
     @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
-    @keyframes glow { 0%, 100% { box-shadow: 0 0 20px rgba(255,255,255,0.1); } 50% { box-shadow: 0 0 40px rgba(255,255,255,0.3); } }
-    @keyframes scan { 0% { top: -100%; } 100% { top: 200%; } }
-
-    .animate-fade-in { animation: fadeIn 0.5s ease-out forwards; }
-    .animate-slide-up { animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-    .animate-slide-in-right { animation: slideInRight 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-    .animate-scale-in { animation: scaleIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+    @keyframes glow { 0%, 100% { box-shadow: 0 0 20px rgba(255,255,255,0.05); } 50% { box-shadow: 0 0 50px rgba(255,255,255,0.2); } }
+    
     .animate-float { animation: float 6s ease-in-out infinite; }
-    .animate-glow { animation: glow 3s ease-in-out infinite; }
-    .animate-scan { animation: scan 3s linear infinite; }
+    .animate-glow { animation: glow 4s ease-in-out infinite; }
 
-    /* Glass UI */
+    /* Glass UI - Premium Frosted Look */
     .glass {
-      background: rgba(255, 255, 255, 0.05);
+      background: rgba(255, 255, 255, 0.03);
       backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
       border: 1px solid rgba(255, 255, 255, 0.1);
+      transition: all 0.3s var(--ease-morph);
     }
+    
     .glass-card {
-      background: rgba(20, 20, 20, 0.8);
+      background: rgba(18, 18, 18, 0.8);
       backdrop-filter: blur(40px);
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+      -webkit-backdrop-filter: blur(40px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 40px 80px -20px rgba(0, 0, 0, 0.8);
+    }
+
+    .hover-morph {
+      transition: all 0.4s var(--ease-out-expo);
+    }
+    .hover-morph:hover {
+      transform: scale(1.02) translateY(-2px);
+      background: rgba(255, 255, 255, 0.08);
+      border-color: rgba(255, 255, 255, 0.3);
+    }
+
+    /* Input Fields */
+    .input-premium {
+      background: white;
+      color: black;
+      transition: all 0.3s var(--ease-morph);
+      border: 2px solid transparent;
+    }
+    .input-premium:focus {
+      transform: scale(1.01);
+      box-shadow: 0 0 0 4px rgba(255,255,255,0.2);
     }
 
     ::-webkit-scrollbar { width: 6px; }
@@ -112,9 +144,9 @@
   <script type="text/babel">
     const { useState, useEffect, useRef } = React;
 
-    // --- CONSTANTS ---
+    // --- CONFIG & CONSTANTS ---
     const CONFIG = {
-      ITSHARE_URL: "https://imgur.com/a/3bfKVnz",
+      ITSHARE_URL: "https://i.imgur.com/OEiiTxw.png",
       ITSHARE_LOADING_IMAGE_URL: "https://i.imgur.com/CyV8q0M.png",
       LOBBY_IMAGE_URL: "https://i.imgur.com/pGB9giE.png",
       SPECIAL_KEY: '1233',
@@ -136,7 +168,7 @@
       user2: { name: 'stan și bran realitatea plus ❤', password: 'stan123', icon: 'https://via.placeholder.com/150/FFFFFF/000000?text=S' }
     };
 
-    // --- FIREBASE SERVICE ---
+    // --- FIREBASE SETUP ---
     const initFirebase = () => {
       if (window.firebase && !window.firebase.apps.length) {
         window.firebase.initializeApp(FIREBASE_CONFIG);
@@ -168,23 +200,23 @@
     const Notification = ({ notification }) => {
       if (!notification.show) return null;
       return (
-        <div className={`fixed top-8 right-8 z-[9999] px-6 py-4 rounded-2xl font-bold shadow-2xl animate-slide-in-right transition-all duration-300 ${
+        <div className={`fixed top-8 right-8 z-[9999] px-6 py-4 rounded-2xl font-bold shadow-2xl animate-slide-right transition-all duration-300 backdrop-blur-xl ${
           notification.type === 'success' 
-            ? 'bg-white text-black border-l-4 border-green-500' 
-            : 'bg-white text-black border-l-4 border-red-500'
+            ? 'bg-white/90 text-black border-l-4 border-green-500' 
+            : 'bg-white/90 text-black border-l-4 border-red-500'
         }`}>
           <div className="flex items-center gap-3">
             <span className="text-2xl">{notification.type === 'success' ? '✨' : '⚠️'}</span>
-            <p>{notification.message}</p>
+            <p className="tracking-wide font-medium">{notification.message}</p>
           </div>
         </div>
       );
     };
 
     const ModalBackdrop = ({ onClose, children }) => (
-      <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-[9999] p-4 animate-fade-in" onClick={onClose}>
-        <div className="glass-card rounded-[2.5rem] p-8 md:p-10 shadow-2xl max-w-md w-full animate-scale-in relative overflow-hidden" onClick={e => e.stopPropagation()}>
-          <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-[50px]"></div>
+      <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-[9999] p-4 animate-morph" onClick={onClose}>
+        <div className="glass-card rounded-[2.5rem] p-8 md:p-10 shadow-2xl max-w-md w-full animate-morph relative overflow-hidden" onClick={e => e.stopPropagation()}>
+          <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-[60px] pointer-events-none"></div>
           {children}
         </div>
       </div>
@@ -194,16 +226,16 @@
       <ModalBackdrop onClose={onCancel}>
         <div className="text-center mb-8 relative z-10">
           <div className="flex justify-center mb-6 text-white">
-            <IconWarning className="w-20 h-20 animate-float" />
+            <IconWarning className="w-20 h-20 animate-float opacity-80" />
           </div>
           <h2 className="text-3xl font-black text-white mb-4 tracking-tight">{title}</h2>
-          <p className="text-gray-300 font-medium">{message}</p>
+          <p className="text-gray-400 font-medium leading-relaxed">{message}</p>
         </div>
         <div className="flex gap-4">
-          <button onClick={onConfirm} className={`flex-1 rounded-2xl py-4 font-bold transition-all transform hover:scale-105 ${isDanger ? 'bg-red-600 text-white hover:bg-red-500' : 'bg-white text-black hover:bg-gray-200'}`}>
+          <button onClick={onConfirm} className={`flex-1 rounded-2xl py-4 font-bold transition-all transform hover:scale-[1.02] active:scale-[0.98] ${isDanger ? 'bg-red-600 text-white hover:bg-red-500' : 'bg-white text-black hover:bg-gray-200'}`}>
             {confirmText}
           </button>
-          <button onClick={onCancel} className="flex-1 bg-transparent border-2 border-white/20 text-white rounded-2xl py-4 font-bold hover:bg-white/10 transition-all transform hover:scale-105">
+          <button onClick={onCancel} className="flex-1 bg-transparent border border-white/20 text-white rounded-2xl py-4 font-bold hover:bg-white/10 transition-all transform hover:scale-[1.02] active:scale-[0.98]">
             {cancelText}
           </button>
         </div>
@@ -223,8 +255,9 @@
         const y = e.clientY - rect.top;
         const centerX = rect.width / 2;
         const centerY = rect.height / 2;
-        const rotateX = ((y - centerY) / centerY) * -8; 
-        const rotateY = ((x - centerX) / centerX) * 8;
+        // Subtle tilt
+        const rotateX = ((y - centerY) / centerY) * -5; 
+        const rotateY = ((x - centerX) / centerX) * 5;
         setTransform(`perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(1.02)`);
         setGlowPos({ x, y });
         setOpacity(1);
@@ -235,29 +268,29 @@
           ref={cardRef}
           onMouseMove={handleMouseMove}
           onMouseLeave={() => { setTransform('perspective(1000px) rotateX(0deg) rotateY(0deg) scale(1)'); setOpacity(0); }}
-          className="relative group rounded-[2rem] p-6 h-52 flex flex-col justify-between overflow-hidden transition-all duration-300 ease-out animate-slide-up"
+          className="relative group rounded-[2rem] p-6 h-52 flex flex-col justify-between overflow-hidden transition-all duration-500 ease-out animate-slide-up"
           style={{ 
             transform,
             animationDelay: `${index * 0.05}s`,
             background: 'rgba(255, 255, 255, 0.03)',
             border: '1px solid rgba(255, 255, 255, 0.08)',
-            backdropFilter: 'blur(16px)',
+            backdropFilter: 'blur(20px)',
             boxShadow: '0 10px 40px -10px rgba(0,0,0,0.5)',
             willChange: 'transform'
           }}
         >
-          <div className="absolute inset-0 pointer-events-none transition-opacity duration-300" style={{ opacity, background: `radial-gradient(600px circle at ${glowPos.x}px ${glowPos.y}px, rgba(255,255,255,0.08), transparent 40%)` }} />
-          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-500/10 to-purple-500/10 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none group-hover:bg-blue-500/20 transition-colors duration-500"></div>
+          <div className="absolute inset-0 pointer-events-none transition-opacity duration-500" style={{ opacity, background: `radial-gradient(400px circle at ${glowPos.x}px ${glowPos.y}px, rgba(255,255,255,0.06), transparent 60%)` }} />
+          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-500/5 to-purple-500/5 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none group-hover:bg-blue-500/10 transition-colors duration-700"></div>
 
           <div className="relative z-10">
-             <div className="w-12 h-12 rounded-2xl flex items-center justify-center mb-4 text-white bg-gradient-to-br from-white/10 to-white/5 border border-white/10 shadow-lg group-hover:scale-110">
+             <div className="w-12 h-12 rounded-2xl flex items-center justify-center mb-4 text-white bg-gradient-to-br from-white/10 to-white/5 border border-white/10 shadow-lg group-hover:scale-110 transition-transform duration-500">
                 <IconFile className="w-6 h-6 opacity-80 group-hover:opacity-100" />
              </div>
              <h3 className="font-bold text-xl text-white line-clamp-1 mb-1 tracking-tight">{file.name}</h3>
              <p className="text-sm text-gray-400 font-medium font-mono">{(file.size/1024).toFixed(1)} KB</p>
           </div>
 
-          <div className="flex gap-3 relative z-10 mt-auto opacity-90 group-hover:opacity-100 transition-all duration-300 translate-y-2 group-hover:translate-y-0">
+          <div className="flex gap-3 relative z-10 mt-auto opacity-80 group-hover:opacity-100 transition-all duration-300 translate-y-2 group-hover:translate-y-0">
              <button onClick={(e) => { e.stopPropagation(); onDownload(); }} className="flex-1 bg-white/10 border border-white/10 text-white py-2.5 rounded-xl font-bold text-sm hover:bg-white hover:text-black transition-all flex items-center justify-center gap-2 backdrop-blur-md">
                 <IconDownload className="w-4 h-4" /> <span className="hidden sm:inline">Save</span>
              </button>
@@ -453,7 +486,7 @@
         return (
           <div className="min-h-screen flex items-center justify-center relative overflow-hidden bg-black">
             <div className="absolute inset-0 bg-gradient-to-br from-blue-900/20 via-black to-purple-900/20 animate-pulse"></div>
-            <div className="text-center relative z-10 animate-fade-in px-4">
+            <div className="text-center relative z-10 animate-morph px-4">
               <h1 className="text-5xl md:text-8xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-gray-400 to-white mb-6 tracking-tighter animate-glow">PRIVATE CLOUD</h1>
               <div className="w-20 h-1 bg-white/20 mx-auto rounded-full overflow-hidden mt-6">
                 <div className="w-full h-full bg-white animate-[translateX_1.5s_ease-in-out_infinite]"></div>
@@ -465,9 +498,9 @@
 
       if (showITShareLoading) {
         return (
-          <div className="min-h-screen bg-black flex flex-col items-center justify-center animate-fade-in p-8 relative overflow-hidden">
+          <div className="min-h-screen bg-black flex flex-col items-center justify-center animate-morph p-8 relative overflow-hidden">
             <div className="absolute inset-0 z-0 opacity-30"><div className="absolute top-0 w-full h-1 bg-blue-500 shadow-[0_0_20px_#3b82f6] animate-scan"></div></div>
-            <div className="z-10 text-center animate-scale-in w-full max-w-4xl">
+            <div className="z-10 text-center animate-morph w-full max-w-4xl">
               <div className="relative mb-8 inline-block rounded-3xl overflow-hidden shadow-[0_0_50px_rgba(59,130,246,0.5)] border-2 border-blue-500/30 w-full">
                 <img src={CONFIG.ITSHARE_LOADING_IMAGE_URL} alt="Loading" className="w-full h-auto object-contain" />
               </div>
@@ -480,20 +513,20 @@
 
       if (view === 'login') {
         return (
-          <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden bg-black perspective-stage">
+          <div className="perspective-stage">
             <Notification notification={notification} />
             <div className="absolute top-[-20%] right-[-10%] w-[800px] h-[800px] bg-white/5 rounded-full blur-[150px]"></div>
             <div className="absolute bottom-[-20%] left-[-10%] w-[800px] h-[800px] bg-blue-600/10 rounded-full blur-[150px]"></div>
 
             {showPasswordReset ? (
-              <div className="w-full max-w-md animate-scale-in z-10">
+              <div className="w-full max-w-md animate-morph z-10">
                 <div className="glass-card rounded-[2.5rem] p-6 md:p-10">
                   <button onClick={() => { setShowPasswordReset(false); setResetKey(''); }} className="flex items-center gap-2 text-gray-400 hover:text-white mb-8 transition-colors"><IconArrowLeft /> Back</button>
                   <h2 className="text-3xl font-black text-white mb-8">Override Protocol</h2>
                   <div className="space-y-4">
-                    <input type="text" placeholder="Admin Key" value={resetKey} onChange={e => setResetKey(e.target.value)} className="input-field w-full rounded-2xl px-6 py-4 outline-none font-bold text-black" />
-                    <input type="password" placeholder="New Sequence" value={newPasswordReset} onChange={e => setNewPasswordReset(e.target.value)} className="input-field w-full rounded-2xl px-6 py-4 outline-none font-bold text-black" />
-                    <input type="password" placeholder="Confirm Sequence" value={confirmPasswordReset} onChange={e => setConfirmPasswordReset(e.target.value)} className="input-field w-full rounded-2xl px-6 py-4 outline-none font-bold text-black" />
+                    <input type="text" placeholder="Admin Key" value={resetKey} onChange={e => setResetKey(e.target.value)} className="input-premium w-full rounded-2xl px-6 py-4 outline-none font-bold" />
+                    <input type="password" placeholder="New Sequence" value={newPasswordReset} onChange={e => setNewPasswordReset(e.target.value)} className="input-premium w-full rounded-2xl px-6 py-4 outline-none font-bold" />
+                    <input type="password" placeholder="Confirm Sequence" value={confirmPasswordReset} onChange={e => setConfirmPasswordReset(e.target.value)} className="input-premium w-full rounded-2xl px-6 py-4 outline-none font-bold" />
                   </div>
                   <button onClick={handlePasswordReset} className="w-full mt-8 bg-white text-black rounded-2xl py-4 font-bold hover:scale-[1.02] transition-transform">Execute Reset</button>
                 </div>
@@ -509,29 +542,29 @@
                       </div>
                       <h2 className="text-3xl font-black text-white tracking-tight">{users[selectedUser].name}</h2>
                     </div>
-                    <input type="password" placeholder="Enter Passkey" value={loginPassword} onChange={e => setLoginPassword(e.target.value)} onKeyPress={e => e.key === 'Enter' && handleLogin()} autoFocus className="w-full rounded-2xl px-6 py-4 text-lg outline-none font-bold text-center tracking-widest mb-6 text-black" />
+                    <input type="password" placeholder="Enter Passkey" value={loginPassword} onChange={e => setLoginPassword(e.target.value)} onKeyPress={e => e.key === 'Enter' && handleLogin()} autoFocus className="input-premium w-full rounded-2xl px-6 py-4 text-lg outline-none font-bold text-center tracking-widest mb-6" />
                     <button onClick={handleLogin} className="w-full bg-white text-black rounded-2xl py-4 font-bold text-lg hover:scale-[1.02] transition-transform shadow-[0_0_20px_rgba(255,255,255,0.2)] mb-4">Authenticate</button>
                     <button onClick={() => { setResetUserId(selectedUser); setShowPasswordReset(true); setSelectedUser(null); }} className="w-full text-gray-500 font-medium hover:text-white transition-colors text-sm">Lost Credentials?</button>
                   </div>
                 </div>
               </div>
             ) : (
-              <div className="w-full max-w-6xl animate-fade-in z-10">
+              <div className="w-full max-w-6xl animate-morph z-10 p-4">
                 <div className="flex flex-col lg:flex-row items-center gap-8 lg:gap-16">
-                  <div className="lg:w-5/12 animate-slide-in-right hidden lg:block">
+                  <div className="lg:w-5/12 animate-slide-right hidden lg:block">
                     <img src={CONFIG.LOBBY_IMAGE_URL} alt="Lobby" className="rounded-[2.5rem] border border-white/10 shadow-2xl w-full rotate-2 hover:rotate-0 transition-transform duration-700 ease-out" />
                   </div>
                   <div className="lg:w-7/12 w-full">
-                    <h1 className="text-5xl md:text-8xl font-black text-white mb-6 tracking-tighter animate-slide-down text-transparent bg-clip-text bg-gradient-to-br from-white to-gray-500">PRIVATE<br/>CLOUD</h1>
-                    <p className="text-xl md:text-2xl text-gray-400 mb-8 md:mb-12 font-light border-l-4 border-white pl-6 animate-slide-down" style={{animationDelay: '0.1s'}}>Secure Vault Access</p>
+                    <h1 className="text-5xl md:text-8xl font-black text-white mb-6 tracking-tighter animate-slide-up text-transparent bg-clip-text bg-gradient-to-br from-white to-gray-500">PRIVATE<br/>CLOUD</h1>
+                    <p className="text-xl md:text-2xl text-gray-400 mb-8 md:mb-12 font-light border-l-4 border-white pl-6 animate-slide-up" style={{animationDelay: '0.1s'}}>Secure Vault Access</p>
                     <div className="grid gap-6">
                       {Object.entries(users).map(([uid, u], i) => (
-                        <div key={uid} onClick={() => setSelectedUser(uid)} className="group glass p-4 rounded-3xl cursor-pointer flex items-center gap-6 hover-trigger" style={{ animationDelay: `${i * 0.1}s` }}>
+                        <div key={uid} onClick={() => setSelectedUser(uid)} className="group glass p-4 rounded-3xl cursor-pointer flex items-center gap-6 hover-morph" style={{ animationDelay: `${i * 0.1}s` }}>
                           <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-white/10 group-hover:border-white transition-colors flex-shrink-0">
                             <img src={u.icon} alt="" className="w-full h-full object-cover" />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <h2 className="text-xl md:text-2xl font-bold text-white group-hover:translate-x-2 transition-transform truncate">{u.name}</h2>
+                            <h2 className="text-xl md:text-2xl font-bold text-white truncate">{u.name}</h2>
                           </div>
                           <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center group-hover:bg-white group-hover:text-black transition-all flex-shrink-0">
                             <svg className="w-6 h-6 transform -rotate-45 group-hover:rotate-0 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
@@ -565,7 +598,7 @@
           )}
 
           <div className="max-w-7xl mx-auto relative z-10 pt-20 md:pt-24">
-            <div className="glass-card rounded-[2.5rem] p-6 md:p-8 shadow-2xl mb-8 animate-slide-down flex flex-col md:flex-row items-center justify-between gap-6">
+            <div className="glass-card rounded-[2.5rem] p-6 md:p-8 shadow-2xl mb-8 animate-slide-up flex flex-col md:flex-row items-center justify-between gap-6">
               <div className="flex flex-col md:flex-row items-center gap-6 w-full md:w-auto text-center md:text-left">
                 <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-white/20 shadow-2xl animate-float">
                   <img src={currentUserData.icon} alt="" className="w-full h-full object-cover" />
@@ -579,16 +612,16 @@
                 </div>
               </div>
               <div className="flex gap-4 w-full md:w-auto justify-center">
-                 <button onClick={() => { setTempProfile({ name: currentUserData.name, icon: currentUserData.icon }); setEditingProfile(true); }} className="p-3 md:p-4 rounded-2xl bg-white/5 border border-white/10 hover:bg-white hover:text-black transition-all hover-trigger"><IconUser /></button>
-                 <button onClick={() => setView(view === 'files' ? 'notes' : 'files')} className="p-3 md:p-4 rounded-2xl bg-white/5 border border-white/10 hover:bg-white hover:text-black transition-all hover-trigger">{view === 'files' ? <IconMessage /> : <IconFile />}</button>
-                 <button onClick={() => setShowLogoutConfirm(true)} className="p-3 md:p-4 rounded-2xl bg-red-500/10 border border-red-500/50 text-red-500 hover:bg-red-500 hover:text-white transition-all hover-trigger"><IconLogOut /></button>
+                 <button onClick={() => { setTempProfile({ name: currentUserData.name, icon: currentUserData.icon }); setEditingProfile(true); }} className="p-3 md:p-4 rounded-2xl bg-white/5 border border-white/10 hover:bg-white hover:text-black transition-all hover-morph"><IconUser /></button>
+                 <button onClick={() => setView(view === 'files' ? 'notes' : 'files')} className="p-3 md:p-4 rounded-2xl bg-white/5 border border-white/10 hover:bg-white hover:text-black transition-all hover-morph">{view === 'files' ? <IconMessage /> : <IconFile />}</button>
+                 <button onClick={() => setShowLogoutConfirm(true)} className="p-3 md:p-4 rounded-2xl bg-red-500/10 border border-red-500/50 text-red-500 hover:bg-red-500 hover:text-white transition-all hover-morph"><IconLogOut /></button>
               </div>
             </div>
 
-            <div className="animate-fade-in pb-20 md:pb-0" style={{animationDelay: '0.2s'}}>
+            <div className="animate-morph pb-20 md:pb-0" style={{animationDelay: '0.2s'}}>
               {view === 'files' ? (
                 <div className="space-y-6">
-                  <div className="animate-scale-in">
+                  <div className="animate-morph">
                       <div onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop} className={`relative group rounded-[2.5rem] border-2 border-dashed transition-all duration-300 w-full p-8 md:p-10 flex flex-col items-center justify-center text-center cursor-pointer overflow-hidden glass ${isDragging ? 'border-white bg-white/10 scale-[1.02] shadow-[0_0_50px_rgba(255,255,255,0.2)]' : 'border-white/20 hover:border-white/50 hover:bg-white/5'}`}>
                         <input type="file" onChange={handleFileSelect} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20" />
                         <div className={`w-20 h-20 rounded-full bg-white text-black flex items-center justify-center mb-6 shadow-[0_0_30px_rgba(255,255,255,0.3)] transition-transform duration-500 ${isDragging ? 'scale-125 rotate-6' : 'group-hover:scale-110'}`}>
@@ -611,7 +644,7 @@
                        />
                     ))}
                     {(files[currentUser] || []).length === 0 && (
-                      <div className="col-span-full py-20 text-center text-gray-500 glass rounded-[3rem] border-dashed animate-scale-in">
+                      <div className="col-span-full py-20 text-center text-gray-500 glass rounded-[3rem] border-dashed animate-morph">
                         <p className="text-xl tracking-widest">NO SECURE FILES FOUND</p>
                       </div>
                     )}
@@ -619,7 +652,7 @@
                 </div>
               ) : (
                 <div className="flex flex-col lg:grid lg:grid-cols-12 gap-8 h-auto lg:h-[calc(100vh-300px)]">
-                   <div className="order-1 lg:order-none lg:col-span-4 glass-card rounded-[2.5rem] p-8 h-auto lg:h-full flex flex-col animate-slide-in-right border border-white/10 shrink-0">
+                   <div className="order-1 lg:order-none lg:col-span-4 glass-card rounded-[2.5rem] p-8 h-auto lg:h-full flex flex-col animate-slide-right border border-white/10 shrink-0">
                       <h3 className="text-2xl font-black mb-6 text-white">Encrypted Note</h3>
                       <textarea value={newNote} onChange={e => setNewNote(e.target.value)} placeholder="Type classified info..." className="flex-1 w-full bg-black/50 border border-white/10 focus:border-white rounded-2xl p-4 resize-none outline-none transition-all mb-4 text-lg text-white placeholder-gray-600 min-h-[150px] lg:min-h-0" />
                       <button onClick={handleAddNote} className="w-full bg-white text-black py-4 rounded-2xl font-bold hover:scale-[1.02] active:scale-95 transition-all shadow-[0_0_20px_rgba(255,255,255,0.2)]">SEND TO CLOUD</button>
@@ -635,7 +668,7 @@
                                <span className="text-xs opacity-50">{formatDate(note.date)}</span>
                              </div>
                              {editingNote === note.id ? (
-                               <div className="animate-fade-in">
+                               <div className="animate-morph">
                                  <textarea value={editNoteText} onChange={e => setEditNoteText(e.target.value)} className="w-full bg-gray-100 text-black border-2 border-black rounded-xl p-3 mb-2 outline-none" autoFocus />
                                  <div className="flex justify-end gap-2">
                                    <button onClick={() => setEditingNote(null)} className="px-4 py-2 text-sm font-bold text-gray-500 hover:bg-gray-200 rounded-xl">Cancel</button>
@@ -667,12 +700,12 @@
           {showEditModal && (
             <ModalBackdrop onClose={() => { setEditingProfile(false); setChangingPassword(false); }}>
                {changingPassword ? (
-                 <div key="password-form" className="animate-slide-up text-white">
+                 <div key="password-form" className="animate-morph text-white">
                    <h2 className="text-2xl font-bold mb-6">Update Protocol</h2>
                    <div className="space-y-4 mb-6">
-                     <input type="password" placeholder="Current Key" value={passwordChange.current} onChange={e => setPasswordChange({...passwordChange, current: e.target.value})} className="w-full rounded-xl p-4 font-bold text-black" />
-                     <input type="password" placeholder="New Key" value={passwordChange.new} onChange={e => setPasswordChange({...passwordChange, new: e.target.value})} className="w-full rounded-xl p-4 font-bold text-black" />
-                     <input type="password" placeholder="Verify Key" value={passwordChange.confirm} onChange={e => setPasswordChange({...passwordChange, confirm: e.target.value})} className="w-full rounded-xl p-4 font-bold text-black" />
+                     <input type="password" placeholder="Current Key" value={passwordChange.current} onChange={e => setPasswordChange({...passwordChange, current: e.target.value})} className="input-premium w-full rounded-2xl px-6 py-4 font-bold" />
+                     <input type="password" placeholder="New Key" value={passwordChange.new} onChange={e => setPasswordChange({...passwordChange, new: e.target.value})} className="input-premium w-full rounded-2xl px-6 py-4 font-bold" />
+                     <input type="password" placeholder="Verify Key" value={passwordChange.confirm} onChange={e => setPasswordChange({...passwordChange, confirm: e.target.value})} className="input-premium w-full rounded-2xl px-6 py-4 font-bold" />
                    </div>
                    <div className="flex gap-4">
                      <button onClick={handleChangePassword} className="flex-1 bg-white text-black py-3 rounded-xl font-bold hover:scale-105 transition-transform">Update</button>
@@ -680,7 +713,7 @@
                    </div>
                  </div>
                ) : (
-                 <div key="profile-form" className="animate-slide-up text-white">
+                 <div key="profile-form" className="animate-morph text-white">
                     <h2 className="text-2xl font-bold mb-6">Modify Profile</h2>
                     <div className="flex justify-center mb-6">
                        <div className="relative group">
@@ -693,7 +726,7 @@
                          </label>
                        </div>
                     </div>
-                    <input type="text" value={tempProfile.name} onChange={e => setTempProfile({...tempProfile, name: e.target.value})} maxLength={CONFIG.MAX_NAME_LENGTH} className="w-full p-4 rounded-xl mb-2 font-bold text-center text-xl bg-white text-black" />
+                    <input type="text" value={tempProfile.name} onChange={e => setTempProfile({...tempProfile, name: e.target.value})} maxLength={CONFIG.MAX_NAME_LENGTH} className="input-premium w-full p-4 rounded-xl mb-2 font-bold text-center text-xl" />
                     <p className="text-xs text-center text-gray-500 mb-6">{tempProfile.name.length}/{CONFIG.MAX_NAME_LENGTH}</p>
                     <div className="flex gap-3">
                        <button onClick={handleProfileSave} className="flex-1 bg-white text-black py-3 rounded-xl font-bold hover:scale-105 transition-transform">Save</button>
