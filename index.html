@@ -574,11 +574,7 @@
                         if (deleteConfirm.step === 1) {
                           setDeleteConfirm({ ...deleteConfirm, step: 2 });
                         } else {
-                          if (deleteConfirm.type === 'file') {
-                            handleDeleteFile(deleteConfirm.id);
-                          } else {
-                            handleDeleteNote(deleteConfirm.id);
-                          }
+                          confirmDelete();
                         }
                       }} 
                       className="flex-1 bg-red-500 text-white rounded-2xl py-4 font-bold hover:bg-red-600 transition-all"
