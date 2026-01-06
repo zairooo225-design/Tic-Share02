@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ITShare 2.0</title>
+  <title>Private Cloud</title>
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -14,6 +14,7 @@
     body { margin: 0; background: #000; font-family: system-ui, -apple-system, sans-serif; min-height: 100vh; }
     
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes fadeInImage { from { opacity: 0; } to { opacity: 1; } }
     @keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
     @keyframes slideDown { from { transform: translateY(-30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
     @keyframes scaleIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
@@ -23,6 +24,7 @@
     @keyframes glow { 0%, 100% { box-shadow: 0 0 20px rgba(255,255,255,0.3); } 50% { box-shadow: 0 0 30px rgba(255,255,255,0.6); } }
     
     .animate-fadeIn { animation: fadeIn 0.5s ease-out; }
+    .animate-fadeInImage { animation: fadeInImage 1s ease-out; }
     .animate-slideUp { animation: slideUp 0.5s ease-out; }
     .animate-slideDown { animation: slideDown 0.5s ease-out; }
     .animate-scaleIn { animation: scaleIn 0.4s ease-out; }
@@ -63,9 +65,9 @@
     // CONFIGURATION
     // IMPORTANT: Use direct image links format: https://i.imgur.com/IMAGE_ID.png
     // Not album links like: https://imgur.com/a/ALBUM_ID
-    const ITSHARE_URL = "http://example.com/"; // Your ITShare URL (will redirect here)
-    const ITSHARE_LOADING_IMAGE_URL = "https://i.imgur.com/2SGm3X6.png"; // ITSharing loading logo
-    const LOBBY_IMAGE_URL = "https://i.imgur.com/J8cZkL3.png"; // Main lobby image (user selection page)
+    const ITSHARE_URL = "https://imgur.com/a/3bfKVnz"; // Your ITShare URL (will redirect here)
+    const ITSHARE_LOADING_IMAGE_URL = "https://i.imgur.com/I3F9PY4.png"; // ITSharing loading logo
+    const LOBBY_IMAGE_URL = "https://i.imgur.com/0ke6FVe.png"; // Main lobby image (user selection page)
 
     const firebaseConfig = {
       apiKey: "AIzaSyBwkx6FZv_pcJr1xkWZ7AvjkPxZxdM2_3g",
@@ -405,7 +407,7 @@
       if (showITShareLoading) {
         return (
           <div className="min-h-screen bg-black flex items-center justify-center">
-            <img src={ITSHARE_LOADING_IMAGE_URL} alt="ITShare" style={{width: '1300px', height: '900px', objectFit: 'contain'}} />
+            <img src={ITSHARE_LOADING_IMAGE_URL} alt="ITShare" className="animate-fadeInImage" style={{width: '1300px', height: '900px', objectFit: 'contain'}} />
           </div>
         );
       }
@@ -458,11 +460,16 @@
 
         return (
           <div className="min-h-screen bg-black flex items-center justify-center p-4">
-            <div className="w-full max-w-2xl animate-fadeIn">
-              <div className="flex justify-center mb-8 animate-slideDown">
-                <img src={LOBBY_IMAGE_URL} alt="Private Cloud" className="rounded-3xl shadow-2xl" style={{maxWidth: '900px', maxHeight: '500px', width: '100%', height: 'auto', objectFit: 'contain'}} />
+            <div className="w-full max-w-6xl animate-fadeIn">
+              <div className="flex flex-col md:flex-row items-center gap-12 mb-12">
+                <div className="md:w-1/3 flex justify-center animate-slideDown">
+                  <img src={LOBBY_IMAGE_URL} alt="ITShare" className="rounded-3xl shadow-2xl" style={{maxWidth: '400px', width: '100%', height: 'auto', objectFit: 'contain'}} />
+                </div>
+                <div className="md:w-2/3 text-center md:text-left">
+                  <h1 className="text-6xl md:text-7xl font-bold text-white mb-4">ITShare</h1>
+                  <p className="text-xl text-gray-400">Please choose your account</p>
+                </div>
               </div>
-              <h1 className="text-5xl md:text-6xl font-bold text-white text-center mb-12 mobile-text">Private Cloud</h1>
               <div className="space-y-4">
                 {Object.entries(users).map(([userId, user], index) => (
                   <div key={userId} onClick={() => handleUserSelect(userId)} className={`bg-white rounded-3xl p-6 cursor-pointer card-hover animate-slideUp delay-${index + 1}`}>
