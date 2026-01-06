@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Private Cloud</title>
   
   <!-- Libraries -->
@@ -22,6 +22,7 @@
       min-height: 100vh;
       color: white;
       overflow-x: hidden;
+      touch-action: manipulation; /* Improves touch response on mobile */
       /* Selection color for that premium feel */
       --selection-bg: #fff;
       --selection-text: #000;
@@ -483,8 +484,8 @@
         return (
           <div className="min-h-screen flex items-center justify-center relative overflow-hidden bg-black">
             <div className="absolute inset-0 bg-gradient-to-br from-blue-900/20 via-black to-purple-900/20 animate-pulse"></div>
-            <div className="text-center relative z-10 animate-fade-in">
-              <h1 className="text-8xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-gray-400 to-white mb-6 tracking-tighter animate-glow">
+            <div className="text-center relative z-10 animate-fade-in px-4">
+              <h1 className="text-5xl md:text-8xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-gray-400 to-white mb-6 tracking-tighter animate-glow">
                 PRIVATE CLOUD
               </h1>
               <div className="w-20 h-1 bg-white/20 mx-auto rounded-full overflow-hidden">
@@ -501,13 +502,13 @@
             <div className="absolute inset-0 z-0 opacity-30">
                <div className="absolute top-0 w-full h-1 bg-blue-500 shadow-[0_0_20px_#3b82f6] animate-scan"></div>
             </div>
-            <div className="z-10 text-center animate-scale-in">
-              <div className="relative mb-8 inline-block rounded-3xl overflow-hidden shadow-[0_0_50px_rgba(59,130,246,0.5)] border-2 border-blue-500/30">
-                <img src={CONFIG.ITSHARE_LOADING_IMAGE_URL} alt="Loading" className="max-w-4xl w-full object-contain" />
+            <div className="z-10 text-center animate-scale-in w-full max-w-4xl">
+              <div className="relative mb-8 inline-block rounded-3xl overflow-hidden shadow-[0_0_50px_rgba(59,130,246,0.5)] border-2 border-blue-500/30 w-full">
+                <img src={CONFIG.ITSHARE_LOADING_IMAGE_URL} alt="Loading" className="w-full h-auto object-contain" />
                 <div className="absolute inset-0 bg-blue-500/10 mix-blend-overlay"></div>
               </div>
-              <h2 className="text-5xl font-black text-white mb-4 tracking-tight animate-text-pulse">Loading...</h2>
-              <p className="text-blue-400 font-mono tracking-widest text-xl">This wont take long..</p>
+              <h2 className="text-3xl md:text-5xl font-black text-white mb-4 tracking-tight animate-text-pulse">Loading...</h2>
+              <p className="text-blue-400 font-mono tracking-widest text-lg md:text-xl">This wont take long..</p>
             </div>
           </div>
         );
@@ -523,7 +524,7 @@
 
             {showPasswordReset ? (
               <div className="w-full max-w-md animate-scale-in z-10">
-                <div className="glass-card rounded-[2.5rem] p-10">
+                <div className="glass-card rounded-[2.5rem] p-6 md:p-10">
                   <button onClick={() => { setShowPasswordReset(false); setResetKey(''); }} className="flex items-center gap-2 text-gray-400 hover:text-white mb-8 transition-colors"><Icons.ArrowLeft /> Back</button>
                   <h2 className="text-3xl font-black text-white mb-8">Override Protocol</h2>
                   <div className="space-y-4">
@@ -536,7 +537,7 @@
               </div>
             ) : selectedUser ? (
               <div className="w-full max-w-md animate-slide-up z-10">
-                <div className="glass-card rounded-[2.5rem] p-10">
+                <div className="glass-card rounded-[2.5rem] p-6 md:p-10">
                   <button onClick={() => setSelectedUser(null)} className="flex items-center gap-2 text-gray-400 hover:text-white mb-8 transition-colors"><Icons.ArrowLeft /> Back</button>
                   <div className="flex flex-col items-center mb-8">
                     <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-white/20 shadow-2xl mb-6 animate-float">
@@ -563,27 +564,27 @@
               </div>
             ) : (
               <div className="w-full max-w-6xl animate-fade-in z-10">
-                <div className="flex flex-col lg:flex-row items-center gap-16">
+                <div className="flex flex-col lg:flex-row items-center gap-8 lg:gap-16">
                   <div className="lg:w-5/12 animate-slide-in-right hidden lg:block">
                     <img src={CONFIG.LOBBY_IMAGE_URL} alt="Lobby" className="rounded-[2.5rem] border border-white/10 shadow-2xl w-full rotate-2 hover:rotate-0 transition-transform duration-700 ease-out" />
                   </div>
                   <div className="lg:w-7/12 w-full">
-                    <h1 className="text-6xl md:text-8xl font-black text-white mb-6 tracking-tighter animate-slide-down text-transparent bg-clip-text bg-gradient-to-br from-white to-gray-500">
+                    <h1 className="text-5xl md:text-8xl font-black text-white mb-6 tracking-tighter animate-slide-down text-transparent bg-clip-text bg-gradient-to-br from-white to-gray-500">
                       PRIVATE<br/>CLOUD
                     </h1>
-                    <p className="text-2xl text-gray-400 mb-12 font-light border-l-4 border-white pl-6 animate-slide-down" style={{animationDelay: '0.1s'}}>
+                    <p className="text-xl md:text-2xl text-gray-400 mb-8 md:mb-12 font-light border-l-4 border-white pl-6 animate-slide-down" style={{animationDelay: '0.1s'}}>
                       Secure Vault Access
                     </p>
                     <div className="grid gap-6">
                       {Object.entries(users).map(([uid, u], i) => (
                         <div key={uid} onClick={() => setSelectedUser(uid)} className="group glass p-4 rounded-3xl cursor-pointer flex items-center gap-6 hover-trigger" style={{ animationDelay: `${i * 0.1}s` }}>
-                          <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-white/10 group-hover:border-white transition-colors">
+                          <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-white/10 group-hover:border-white transition-colors flex-shrink-0">
                             <img src={u.icon} alt="" className="w-full h-full object-cover" />
                           </div>
-                          <div className="flex-1">
-                            <h2 className="text-2xl font-bold text-white group-hover:translate-x-2 transition-transform">{u.name}</h2>
+                          <div className="flex-1 min-w-0">
+                            <h2 className="text-xl md:text-2xl font-bold text-white group-hover:translate-x-2 transition-transform truncate">{u.name}</h2>
                           </div>
-                          <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center group-hover:bg-white group-hover:text-black transition-all">
+                          <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center group-hover:bg-white group-hover:text-black transition-all flex-shrink-0">
                             <svg className="w-6 h-6 transform -rotate-45 group-hover:rotate-0 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
                           </div>
                         </div>
@@ -613,38 +614,38 @@
 
           {!showEditModal && (
             <button
-              onClick={() => { setShowITShareLoading(true); setTimeout(() => window.location.href = CONFIG.ITSHARE_URL, 2000); }}
-              className="fixed top-6 left-6 z-50 glass text-white px-6 py-3 rounded-2xl font-bold hover:bg-white hover:text-black transition-all shadow-2xl animate-glow"
+              onClick={() => { setShowITShareLoading(true); setTimeout(() => window.location.href = CONFIG.ITSHARE_URL, 3400); }}
+              className="fixed top-4 left-4 md:top-6 md:left-6 z-50 glass text-white px-4 py-2 md:px-6 md:py-3 rounded-2xl font-bold text-sm md:text-base hover:bg-white hover:text-black transition-all shadow-2xl animate-glow"
             >
               ITSHARE Converter
             </button>
           )}
 
-          <div className="max-w-7xl mx-auto relative z-10 pt-24">
+          <div className="max-w-7xl mx-auto relative z-10 pt-20 md:pt-24">
             {/* Header */}
-            <div className="glass-card rounded-[2.5rem] p-8 shadow-2xl mb-8 animate-slide-down flex flex-col md:flex-row items-center justify-between gap-6">
-              <div className="flex items-center gap-6">
+            <div className="glass-card rounded-[2.5rem] p-6 md:p-8 shadow-2xl mb-8 animate-slide-down flex flex-col md:flex-row items-center justify-between gap-6">
+              <div className="flex flex-col md:flex-row items-center gap-6 w-full md:w-auto text-center md:text-left">
                 <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-white/20 shadow-2xl animate-float">
                   <img src={currentUserData.icon} alt="" className="w-full h-full object-cover" />
                 </div>
                 <div>
-                  <h1 className="text-4xl font-black text-white tracking-tight mb-1">{currentUserData.name}</h1>
-                  <div className="flex items-center gap-2 text-gray-400 font-medium bg-white/5 border border-white/10 px-4 py-1 rounded-full w-fit">
+                  <h1 className="text-3xl md:text-4xl font-black text-white tracking-tight mb-1">{currentUserData.name}</h1>
+                  <div className="flex items-center justify-center md:justify-start gap-2 text-gray-400 font-medium bg-white/5 border border-white/10 px-4 py-1 rounded-full w-fit mx-auto md:mx-0">
                     <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
                     {(files[currentUser] || []).length} Encrypted Files
                   </div>
                 </div>
               </div>
 
-              <div className="flex gap-4">
-                 <button onClick={() => { setTempProfile({ name: currentUserData.name, icon: currentUserData.icon }); setEditingProfile(true); }} className="p-4 rounded-2xl bg-white/5 border border-white/10 hover:bg-white hover:text-black transition-all hover-trigger"><Icons.User /></button>
-                 <button onClick={() => setView(view === 'files' ? 'notes' : 'files')} className="p-4 rounded-2xl bg-white/5 border border-white/10 hover:bg-white hover:text-black transition-all hover-trigger">{view === 'files' ? <Icons.Message /> : <Icons.File />}</button>
-                 <button onClick={() => setShowLogoutConfirm(true)} className="p-4 rounded-2xl bg-red-500/10 border border-red-500/50 text-red-500 hover:bg-red-500 hover:text-white transition-all hover-trigger"><Icons.LogOut /></button>
+              <div className="flex gap-4 w-full md:w-auto justify-center">
+                 <button onClick={() => { setTempProfile({ name: currentUserData.name, icon: currentUserData.icon }); setEditingProfile(true); }} className="p-3 md:p-4 rounded-2xl bg-white/5 border border-white/10 hover:bg-white hover:text-black transition-all hover-trigger"><Icons.User /></button>
+                 <button onClick={() => setView(view === 'files' ? 'notes' : 'files')} className="p-3 md:p-4 rounded-2xl bg-white/5 border border-white/10 hover:bg-white hover:text-black transition-all hover-trigger">{view === 'files' ? <Icons.Message /> : <Icons.File />}</button>
+                 <button onClick={() => setShowLogoutConfirm(true)} className="p-3 md:p-4 rounded-2xl bg-red-500/10 border border-red-500/50 text-red-500 hover:bg-red-500 hover:text-white transition-all hover-trigger"><Icons.LogOut /></button>
               </div>
             </div>
 
             {/* Content */}
-            <div className="animate-fade-in" style={{animationDelay: '0.2s'}}>
+            <div className="animate-fade-in pb-20 md:pb-0" style={{animationDelay: '0.2s'}}>
               {view === 'files' ? (
                 <div className="space-y-6">
                   <div className="glass rounded-[2.5rem] p-4 flex justify-center animate-scale-in">
@@ -679,19 +680,19 @@
                   </div>
                 </div>
               ) : (
-                <div className="grid lg:grid-cols-12 gap-8 h-[calc(100vh-300px)]">
-                   <div className="lg:col-span-4 glass-card rounded-[2.5rem] p-8 h-full flex flex-col animate-slide-in-right border border-white/10">
+                <div className="flex flex-col lg:grid lg:grid-cols-12 gap-8 h-auto lg:h-[calc(100vh-300px)]">
+                   <div className="order-1 lg:order-none lg:col-span-4 glass-card rounded-[2.5rem] p-8 h-auto lg:h-full flex flex-col animate-slide-in-right border border-white/10 shrink-0">
                       <h3 className="text-2xl font-black mb-6 text-white">Encrypted Note</h3>
-                      <textarea value={newNote} onChange={e => setNewNote(e.target.value)} placeholder="Type classified info..." className="flex-1 w-full bg-black/50 border border-white/10 focus:border-white rounded-2xl p-4 resize-none outline-none transition-all mb-4 text-lg text-white placeholder-gray-600" />
+                      <textarea value={newNote} onChange={e => setNewNote(e.target.value)} placeholder="Type classified info..." className="flex-1 w-full bg-black/50 border border-white/10 focus:border-white rounded-2xl p-4 resize-none outline-none transition-all mb-4 text-lg text-white placeholder-gray-600 min-h-[150px] lg:min-h-0" />
                       <button onClick={handleAddNote} className="w-full bg-white text-black py-4 rounded-2xl font-bold hover:scale-[1.02] active:scale-95 transition-all shadow-[0_0_20px_rgba(255,255,255,0.2)]">SEND TO CLOUD</button>
                    </div>
                    
-                   <div className="lg:col-span-8 space-y-4 overflow-y-auto pr-2 pb-20">
+                   <div className="order-2 lg:order-none lg:col-span-8 space-y-4 overflow-y-auto pr-2 pb-4 lg:pb-20 h-[60vh] lg:h-full custom-scrollbar">
                      {notes.length === 0 ? (
-                        <div className="glass border-dashed rounded-[2.5rem] h-full flex items-center justify-center text-gray-600 tracking-widest">NO TRANSMISSIONS</div>
+                        <div className="glass border-dashed rounded-[2.5rem] h-full flex items-center justify-center text-gray-600 tracking-widest min-h-[200px]">NO TRANSMISSIONS</div>
                      ) : (
                         notes.map((note, i) => (
-                          <div key={note.id} className={`p-6 rounded-[2rem] animate-slide-up transition-all hover:translate-y-[-2px] border ${note.userId === currentUser ? 'bg-white text-black ml-12 border-white' : 'bg-black/40 text-white mr-12 border-white/10'}`} style={{ animationDelay: `${i * 0.05}s` }}>
+                          <div key={note.id} className={`p-6 rounded-[2rem] animate-slide-up transition-all hover:translate-y-[-2px] border ${note.userId === currentUser ? 'bg-white text-black ml-4 md:ml-12 border-white' : 'bg-black/40 text-white mr-4 md:mr-12 border-white/10'}`} style={{ animationDelay: `${i * 0.05}s` }}>
                              <div className="flex items-center justify-between mb-2">
                                <span className="font-bold text-sm opacity-50 uppercase tracking-wider">{note.user}</span>
                                <span className="text-xs opacity-50">{formatDate(note.date)}</span>
