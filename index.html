@@ -61,7 +61,9 @@
     const { useState, useEffect } = React;
 
     // CONFIGURATION
-    const ITSHARE_URL = "https://imgur.com/a/3bfKVnz"; // Update this to your ITShare URL
+    // IMPORTANT: Use direct image links format: https://i.imgur.com/IMAGE_ID.png
+    // Not album links like: https://imgur.com/a/ALBUM_ID
+    const ITSHARE_URL = "roblox.com"; // Your ITShare URL (will redirect here)
     const ITSHARE_LOADING_IMAGE_URL = "https://i.imgur.com/I3F9PY4.png"; // ITSharing loading logo
     const LOBBY_IMAGE_URL = "https://i.imgur.com/0ke6FVe.png"; // Main lobby image (user selection page)
 
@@ -402,8 +404,8 @@
 
       if (showITShareLoading) {
         return (
-          <div className="min-h-screen bg-black flex items-center justify-center relative overflow-hidden">
-            <img src={ITSHARE_LOADING_IMAGE_URL} alt="ITShare" className="max-w-md w-full h-auto object-contain animate-pulse" />
+          <div className="min-h-screen bg-black flex items-center justify-center">
+            <img src={ITSHARE_LOADING_IMAGE_URL} alt="ITShare" style={{width: '1300px', height: '900px', objectFit: 'contain'}} />
           </div>
         );
       }
