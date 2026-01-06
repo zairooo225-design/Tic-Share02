@@ -2,7 +2,7 @@
 
 Tic-Share02
 
-Version 2.5 Beta Alpha Prerelease Prototype ahh version type shet
+Version 3.5 Beta Alpha Prerelease Prototype ahh version type shet
 
 -Changed all of the Animations and UI.
 
