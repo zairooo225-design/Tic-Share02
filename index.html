@@ -69,14 +69,23 @@
       will-change: transform, opacity, filter;
     }
 
-    /* Warp Effect for Drop Zone */
+    /* Warp Effect for Drop Zone - MODIFIED: White Glow, No Jump */
     @keyframes warpPulse {
-      0% { transform: scale(1); border-color: rgba(255,255,255,0.2); }
-      50% { transform: scale(0.98); border-color: rgba(255,255,255,0.8); box-shadow: 0 0 30px rgba(59, 130, 246, 0.5) inset; }
-      100% { transform: scale(1); border-color: rgba(255,255,255,0.2); }
+      0% { 
+        border-color: rgba(255,255,255,0.3); 
+        box-shadow: 0 0 15px rgba(255, 255, 255, 0.1) inset; 
+      }
+      50% { 
+        border-color: rgba(255,255,255,1); 
+        box-shadow: 0 0 50px rgba(255, 255, 255, 0.5) inset; /* Strong White Glow */
+      }
+      100% { 
+        border-color: rgba(255,255,255,0.3); 
+        box-shadow: 0 0 15px rgba(255, 255, 255, 0.1) inset; 
+      }
     }
     .animate-warp {
-      animation: warpPulse 1s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+      animation: warpPulse 2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
     }
 
     /* Samsung Flip Open */
@@ -179,7 +188,7 @@
     // --- CONFIG & CONSTANTS ---
     const CONFIG = {
       // !!! EDIT VERSION HERE !!!
-      APP_VERSION: "Version 3.0.5 [BETA+]", 
+      APP_VERSION: "Version 1.0.4 [BETA]", 
       
       // !!! EDIT CREDITS HERE !!!
       CREDITS_TEXT: "All credits to Zairo & Spv",
