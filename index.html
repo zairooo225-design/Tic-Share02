@@ -37,19 +37,35 @@
 
     /* Animations */
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+    
     @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
     @keyframes slideDown { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    
     @keyframes scaleIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+    @keyframes scaleOut { from { transform: scale(1); opacity: 1; } to { transform: scale(0.95); opacity: 0; } }
+    
     @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
     @keyframes glow { 0%, 100% { box-shadow: 0 0 20px rgba(255,255,255,0.1); } 50% { box-shadow: 0 0 40px rgba(255,255,255,0.3); } }
-    @keyframes pulse-glow { 0%, 100% { opacity: 0.5; transform: scale(1); } 50% { opacity: 0.8; transform: scale(1.05); } }
+    
+    /* Converter Animations */
+    @keyframes scanline { 0% { top: 0%; opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 100% { top: 100%; opacity: 0; } }
+    @keyframes textPulse { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
 
-    .animate-fade-in { animation: fadeIn 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
-    .animate-slide-up { animation: slideUp 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
-    .animate-slide-down { animation: slideDown 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
-    .animate-scale-in { animation: scaleIn 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+    .animate-fade-in { animation: fadeIn 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+    .animate-fade-out { animation: fadeOut 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+    
+    .animate-slide-up { animation: slideUp 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+    .animate-slide-down { animation: slideDown 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+    
+    .animate-scale-in { animation: scaleIn 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+    .animate-scale-out { animation: scaleOut 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+    
     .animate-float { animation: float 6s ease-in-out infinite; }
     .animate-glow { animation: glow 3s ease-in-out infinite; }
+
+    .animate-scan { animation: scanline 2.5s linear infinite; }
+    .animate-text-pulse { animation: textPulse 1.5s ease-in-out infinite; }
 
     /* Utility Classes for Glassmorphism */
     .glass {
@@ -100,7 +116,7 @@
     // --- CONFIGURATION ---
     const CONFIG = {
       ITSHARE_URL: "https://imgur.com/a/3bfKVnz",
-      ITSHARE_LOADING_IMAGE_URL: "https://i.imgur.com/CyV8q0M.png",
+      ITSHARE_LOADING_IMAGE_URL: "https://i.imgur.com/4BEr3zO.png",
       LOBBY_IMAGE_URL: "https://i.imgur.com/pGB9giE.png",
       SPECIAL_KEY: '1233',
       MAX_NAME_LENGTH: 20,
@@ -136,6 +152,24 @@
       }
     };
 
+    // --- HOOKS ---
+    // Hook to allow animation to finish before unmounting
+    const useDelayUnmount = (isMounted, delayTime) => {
+      const [shouldRender, setShouldRender] = useState(false);
+
+      useEffect(() => {
+        let timeoutId;
+        if (isMounted && !shouldRender) {
+          setShouldRender(true);
+        } else if (!isMounted && shouldRender) {
+          timeoutId = setTimeout(() => setShouldRender(false), delayTime);
+        }
+        return () => clearTimeout(timeoutId);
+      }, [isMounted, delayTime, shouldRender]);
+
+      return shouldRender;
+    };
+
     // --- ICONS ---
     const Icons = {
       Upload: () => <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" className="w-full h-full"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>,
@@ -152,9 +186,13 @@
 
     // --- COMPONENTS ---
     const Notification = ({ notification }) => {
-      if (!notification.show) return null;
+      const shouldRender = useDelayUnmount(notification.show, 300);
+      if (!shouldRender) return null;
+
+      const animationClass = notification.show ? 'animate-slide-down' : 'animate-fade-out';
+
       return (
-        <div className={`fixed top-8 right-8 z-[9999] px-6 py-4 rounded-2xl font-bold shadow-[0_0_30px_rgba(0,0,0,0.5)] animate-slide-down transform transition-all duration-300 backdrop-blur-md ${
+        <div className={`fixed top-8 right-8 z-[9999] px-6 py-4 rounded-2xl font-bold shadow-[0_0_30px_rgba(0,0,0,0.5)] transform transition-all duration-300 backdrop-blur-md ${animationClass} ${
           notification.type === 'success' 
             ? 'bg-white text-black border border-green-500' 
             : 'bg-white text-black border border-red-500'
@@ -167,18 +205,27 @@
       );
     };
 
-    const ModalBackdrop = ({ onClose, children }) => (
-      <div className="fixed inset-0 bg-black/80 backdrop-blur-xl flex items-center justify-center z-[9999] p-4 animate-fade-in" onClick={onClose}>
-        <div className="glass-card rounded-[2.5rem] p-8 md:p-10 shadow-2xl max-w-md w-full animate-scale-in relative overflow-hidden" onClick={e => e.stopPropagation()}>
-          {/* Ambient light inside modal */}
-          <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-[50px]"></div>
-          {children}
-        </div>
-      </div>
-    );
+    const ModalBackdrop = ({ show, onClose, children }) => {
+      const shouldRender = useDelayUnmount(show, 400); // 400ms to allow exit animation
+      
+      if (!shouldRender) return null;
 
-    const ConfirmationModal = ({ title, message, confirmText, cancelText = "Cancel", onConfirm, onCancel, isDanger = false }) => (
-      <ModalBackdrop onClose={onCancel}>
+      const containerClass = show ? 'animate-fade-in' : 'animate-fade-out';
+      const contentClass = show ? 'animate-scale-in' : 'animate-scale-out';
+
+      return (
+        <div className={`fixed inset-0 bg-black/80 backdrop-blur-xl flex items-center justify-center z-[9999] p-4 ${containerClass}`} onClick={onClose}>
+          <div className={`glass-card rounded-[2.5rem] p-8 md:p-10 shadow-2xl max-w-md w-full relative overflow-hidden ${contentClass}`} onClick={e => e.stopPropagation()}>
+            {/* Ambient light inside modal */}
+            <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-[50px]"></div>
+            {children}
+          </div>
+        </div>
+      );
+    };
+
+    const ConfirmationModal = ({ show, title, message, confirmText, cancelText = "Cancel", onConfirm, onCancel, isDanger = false }) => (
+      <ModalBackdrop show={show} onClose={onCancel}>
         <div className="text-center mb-8 relative z-10">
           <div className="flex justify-center mb-6 text-white">
             <Icons.Warning className="w-20 h-20 animate-float" />
@@ -450,8 +497,18 @@
 
       if (showITShareLoading) {
         return (
-          <div className="min-h-screen bg-black flex items-center justify-center animate-fade-in p-8">
-            <img src={CONFIG.ITSHARE_LOADING_IMAGE_URL} alt="Loading" className="max-w-full max-h-screen object-contain animate-scale-in" />
+          <div className="min-h-screen bg-black flex flex-col items-center justify-center animate-fade-in p-8 relative overflow-hidden">
+            <div className="absolute inset-0 z-0 opacity-30">
+               <div className="absolute top-0 w-full h-1 bg-blue-500 shadow-[0_0_20px_#3b82f6] animate-scan"></div>
+            </div>
+            <div className="z-10 text-center animate-scale-in">
+              <div className="relative mb-8 inline-block rounded-3xl overflow-hidden shadow-[0_0_50px_rgba(59,130,246,0.5)] border-2 border-blue-500/30">
+                <img src={CONFIG.ITSHARE_LOADING_IMAGE_URL} alt="Loading" className="max-w-4xl w-full object-contain" />
+                <div className="absolute inset-0 bg-blue-500/10 mix-blend-overlay"></div>
+              </div>
+              <h2 className="text-5xl font-black text-white mb-4 tracking-tight animate-text-pulse">Loading...</h2>
+              <p className="text-blue-400 font-mono tracking-widest text-xl">This wont take long..</p>
+            </div>
           </div>
         );
       }
@@ -544,6 +601,9 @@
       const currentUserData = currentUser ? users[currentUser] : null;
       if (!currentUserData) return null;
 
+      // Define showModal state logic inside App for cleaner passing to ModalBackdrop
+      const showEditModal = editingProfile || changingPassword;
+
       return (
         <div className="min-h-screen bg-black p-4 md:p-8 relative selection:bg-white selection:text-black">
           <Notification notification={notification} />
@@ -551,7 +611,7 @@
              <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-white/5 rounded-full blur-[100px]"></div>
           </div>
 
-          {!editingProfile && (
+          {!showEditModal && (
             <button
               onClick={() => { setShowITShareLoading(true); setTimeout(() => window.location.href = CONFIG.ITSHARE_URL, 2000); }}
               className="fixed top-6 left-6 z-50 glass text-white px-6 py-3 rounded-2xl font-bold hover:bg-white hover:text-black transition-all shadow-2xl animate-glow"
@@ -663,60 +723,57 @@
           </div>
 
           {/* --- MODALS --- */}
-          {showLogoutConfirm && <ConfirmationModal title="Terminate Session?" message="Secure connection will be severed." confirmText="Log Off" onConfirm={handleLogout} onCancel={() => setShowLogoutConfirm(false)} isDanger />}
+          <ConfirmationModal show={showLogoutConfirm} title="Terminate Session?" message="Secure connection will be severed." confirmText="Log Off" onConfirm={handleLogout} onCancel={() => setShowLogoutConfirm(false)} isDanger />
           
-          {showDeleteConfirm && <ConfirmationModal title={deleteStep === 1 ? "Confirm Deletion" : "Final Authorization"} message={deleteStep === 1 ? "Item will be flagged for removal." : "This data cannot be recovered. Proceed?"} confirmText={deleteStep === 1 ? "Delete" : "Obliterate"} onConfirm={proceedDelete} onCancel={() => { setShowDeleteConfirm(false); setDeleteStep(1); }} isDanger />}
+          <ConfirmationModal show={showDeleteConfirm} title={deleteStep === 1 ? "Confirm Deletion" : "Final Authorization"} message={deleteStep === 1 ? "Item will be flagged for removal." : "This data cannot be recovered. Proceed?"} confirmText={deleteStep === 1 ? "Delete" : "Obliterate"} onConfirm={proceedDelete} onCancel={() => { setShowDeleteConfirm(false); setDeleteStep(1); }} isDanger />
 
-          {showStorageWarning && (
-            <ModalBackdrop onClose={() => setShowStorageWarning(false)}>
-               <div className="text-center text-white">
-                 <div className="text-6xl mb-4 animate-bounce">⚠️</div>
-                 <h2 className="text-2xl font-bold mb-2">Capacity Critical</h2>
-                 <p className="text-gray-400 mb-6">Storage Usage > 80%. System stability at risk.</p>
-                 <button onClick={() => setShowStorageWarning(false)} className="w-full bg-white text-black py-3 rounded-2xl font-bold">Acknowledge</button>
+          <ModalBackdrop show={showStorageWarning} onClose={() => setShowStorageWarning(false)}>
+             <div className="text-center text-white">
+               <div className="text-6xl mb-4 animate-bounce">⚠️</div>
+               <h2 className="text-2xl font-bold mb-2">Capacity Critical</h2>
+               <p className="text-gray-400 mb-6">Storage Usage > 80%. System stability at risk.</p>
+               <button onClick={() => setShowStorageWarning(false)} className="w-full bg-white text-black py-3 rounded-2xl font-bold">Acknowledge</button>
+             </div>
+          </ModalBackdrop>
+
+          {/* Edit Profile / Password Modal with Transitions */}
+          <ModalBackdrop show={showEditModal} onClose={() => { setEditingProfile(false); setChangingPassword(false); }}>
+             {changingPassword ? (
+               <div key="password-form" className="animate-slide-up text-white">
+                 <h2 className="text-2xl font-bold mb-6">Update Protocol</h2>
+                 <div className="space-y-4 mb-6">
+                   <input type="password" placeholder="Current Key" value={passwordChange.current} onChange={e => setPasswordChange({...passwordChange, current: e.target.value})} className="input-field w-full rounded-xl p-4 font-bold" />
+                   <input type="password" placeholder="New Key" value={passwordChange.new} onChange={e => setPasswordChange({...passwordChange, new: e.target.value})} className="input-field w-full rounded-xl p-4 font-bold" />
+                   <input type="password" placeholder="Verify Key" value={passwordChange.confirm} onChange={e => setPasswordChange({...passwordChange, confirm: e.target.value})} className="input-field w-full rounded-xl p-4 font-bold" />
+                 </div>
+                 <div className="flex gap-4">
+                   <button onClick={handleChangePassword} className="flex-1 bg-white text-black py-3 rounded-xl font-bold hover:scale-105 transition-transform">Update</button>
+                   <button onClick={() => setChangingPassword(false)} className="flex-1 bg-transparent border border-white/20 text-white py-3 rounded-xl font-bold">Cancel</button>
+                 </div>
                </div>
-            </ModalBackdrop>
-          )}
-
-          {(editingProfile || changingPassword) && (
-            <ModalBackdrop onClose={() => { setEditingProfile(false); setChangingPassword(false); }}>
-               {changingPassword ? (
-                 <div className="animate-slide-up text-white">
-                   <h2 className="text-2xl font-bold mb-6">Update Protocol</h2>
-                   <div className="space-y-4 mb-6">
-                     <input type="password" placeholder="Current Key" value={passwordChange.current} onChange={e => setPasswordChange({...passwordChange, current: e.target.value})} className="input-field w-full rounded-xl p-4 font-bold" />
-                     <input type="password" placeholder="New Key" value={passwordChange.new} onChange={e => setPasswordChange({...passwordChange, new: e.target.value})} className="input-field w-full rounded-xl p-4 font-bold" />
-                     <input type="password" placeholder="Verify Key" value={passwordChange.confirm} onChange={e => setPasswordChange({...passwordChange, confirm: e.target.value})} className="input-field w-full rounded-xl p-4 font-bold" />
-                   </div>
-                   <div className="flex gap-4">
-                     <button onClick={handleChangePassword} className="flex-1 bg-white text-black py-3 rounded-xl font-bold hover:scale-105 transition-transform">Update</button>
-                     <button onClick={() => setChangingPassword(false)} className="flex-1 bg-transparent border border-white/20 text-white py-3 rounded-xl font-bold">Cancel</button>
-                   </div>
-                 </div>
-               ) : (
-                 <div className="animate-slide-up text-white">
-                    <h2 className="text-2xl font-bold mb-6">Modify Profile</h2>
-                    <div className="flex justify-center mb-6">
-                       <div className="relative group">
-                         <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-white/20">
-                           <img src={tempProfile.icon} alt="" className="w-full h-full object-cover" />
-                         </div>
-                         <label className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-full cursor-pointer font-bold tracking-widest backdrop-blur-sm">
-                           UPLOAD
-                           <input type="file" onChange={e => { const f = e.target.files?.[0]; if (f) { const r = new FileReader(); r.onload = ev => setTempProfile({...tempProfile, icon: ev.target?.result}); r.readAsDataURL(f); } }} className="hidden" />
-                         </label>
+             ) : (
+               <div key="profile-form" className="animate-slide-up text-white">
+                  <h2 className="text-2xl font-bold mb-6">Modify Profile</h2>
+                  <div className="flex justify-center mb-6">
+                     <div className="relative group">
+                       <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-white/20">
+                         <img src={tempProfile.icon} alt="" className="w-full h-full object-cover" />
                        </div>
-                    </div>
-                    <input type="text" value={tempProfile.name} onChange={e => setTempProfile({...tempProfile, name: e.target.value})} maxLength={CONFIG.MAX_NAME_LENGTH} className="input-field w-full p-4 rounded-xl mb-2 font-bold text-center text-xl bg-white text-black" />
-                    <p className="text-xs text-center text-gray-500 mb-6">{tempProfile.name.length}/{CONFIG.MAX_NAME_LENGTH}</p>
-                    <div className="flex gap-3">
-                       <button onClick={handleProfileSave} className="flex-1 bg-white text-black py-3 rounded-xl font-bold hover:scale-105 transition-transform">Save</button>
-                       <button onClick={() => { setEditingProfile(false); setChangingPassword(true); }} className="flex-1 bg-transparent border border-white/20 text-white py-3 rounded-xl font-bold hover:bg-white/5">Keys</button>
-                    </div>
-                 </div>
-               )}
-            </ModalBackdrop>
-          )}
+                       <label className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-full cursor-pointer font-bold tracking-widest backdrop-blur-sm">
+                         UPLOAD
+                         <input type="file" onChange={e => { const f = e.target.files?.[0]; if (f) { const r = new FileReader(); r.onload = ev => setTempProfile({...tempProfile, icon: ev.target?.result}); r.readAsDataURL(f); } }} className="hidden" />
+                       </label>
+                     </div>
+                  </div>
+                  <input type="text" value={tempProfile.name} onChange={e => setTempProfile({...tempProfile, name: e.target.value})} maxLength={CONFIG.MAX_NAME_LENGTH} className="input-field w-full p-4 rounded-xl mb-2 font-bold text-center text-xl bg-white text-black" />
+                  <p className="text-xs text-center text-gray-500 mb-6">{tempProfile.name.length}/{CONFIG.MAX_NAME_LENGTH}</p>
+                  <div className="flex gap-3">
+                     <button onClick={handleProfileSave} className="flex-1 bg-white text-black py-3 rounded-xl font-bold hover:scale-105 transition-transform">Save</button>
+                     <button onClick={() => { setEditingProfile(false); setChangingPassword(true); }} className="flex-1 bg-transparent border border-white/20 text-white py-3 rounded-xl font-bold hover:bg-white/5">Keys</button>
+                  </div>
+               </div>
+             )}
+          </ModalBackdrop>
         </div>
       );
     };
