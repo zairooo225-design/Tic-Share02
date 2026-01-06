@@ -45,17 +45,49 @@
       overflow: hidden;
     }
 
-    /* --- THE SAMSUNG Z FLIP OPEN ANIMATION --- */
+    /* --- ANIMATIONS --- */
+
+    /* "Sick" Fly-In Animation for Files */
+    @keyframes flyIn3D {
+      0% {
+        opacity: 0;
+        transform: translateY(-100px) scale(0.5) rotateX(45deg) rotateY(10deg);
+        filter: blur(10px);
+      }
+      60% {
+        transform: translateY(10px) scale(1.05) rotateX(-5deg) rotateY(-2deg);
+        filter: blur(0px);
+      }
+      100% {
+        opacity: 1;
+        transform: translateY(0) scale(1) rotateX(0) rotateY(0);
+      }
+    }
+
+    .animate-fly-in {
+      animation: flyIn3D 0.8s var(--ease-spring) forwards;
+      will-change: transform, opacity, filter;
+    }
+
+    /* Warp Effect for Drop Zone */
+    @keyframes warpPulse {
+      0% { transform: scale(1); border-color: rgba(255,255,255,0.2); }
+      50% { transform: scale(0.98); border-color: rgba(255,255,255,0.8); box-shadow: 0 0 30px rgba(59, 130, 246, 0.5) inset; }
+      100% { transform: scale(1); border-color: rgba(255,255,255,0.2); }
+    }
+    .animate-warp {
+      animation: warpPulse 1s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+    }
+
+    /* Samsung Flip Open */
     @keyframes samsungFlipOpen {
       0% {
         opacity: 0;
-        /* Start folded shut (90 degrees), slightly smaller, and lower */
         transform: rotateX(-90deg) scale(0.8) translateY(100px);
         filter: brightness(0.2) blur(10px);
       }
       100% {
         opacity: 1;
-        /* End fully open (0 degrees), full scale */
         transform: rotateX(0deg) scale(1) translateY(0);
         filter: brightness(1) blur(0px);
       }
@@ -68,7 +100,7 @@
       will-change: transform, opacity, filter;
     }
 
-    /* --- GLOBAL MORPH ANIMATIONS --- */
+    /* Standard Morphs */
     @keyframes morphFadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
     @keyframes slideUpMorph { from { opacity: 0; transform: translateY(40px) scale(0.95); } to { opacity: 1; transform: translateY(0) scale(1); } }
     @keyframes slideRightMorph { from { opacity: 0; transform: translateX(30px); } to { opacity: 1; transform: translateX(0); } }
@@ -86,7 +118,7 @@
     .animate-glow { animation: glow 4s ease-in-out infinite; }
     .animate-scan { animation: scan 3s linear infinite; }
 
-    /* Glass UI - Premium Frosted Look */
+    /* Glass UI */
     .glass {
       background: rgba(255, 255, 255, 0.03);
       backdrop-filter: blur(20px);
@@ -128,15 +160,15 @@
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 10px; }
   </style>
-<script type="importmap">
-{
-  "imports": {
-    "react": "https://esm.sh/react@^19.2.3",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
-    "react/": "https://esm.sh/react@^19.2.3/"
+  <script type="importmap">
+  {
+    "imports": {
+      "react": "https://esm.sh/react@^19.2.3",
+      "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+      "react/": "https://esm.sh/react@^19.2.3/"
+    }
   }
-}
-</script>
+  </script>
 </head>
 <body>
   <div id="root"></div>
@@ -146,8 +178,13 @@
 
     // --- CONFIG & CONSTANTS ---
     const CONFIG = {
+      // !!! EDIT VERSION HERE !!!
+      APP_VERSION: "Version 1.0.4 [BETA]", 
+      
+      // !!! EDIT CREDITS HERE !!!
+      CREDITS_TEXT: "All credits to Zairo & Spv",
+
       ITSHARE_URL: "https://imgur.com/a/3bfKVnz",
-      // UPDATED ICON AS REQUESTED
       ITSHARE_LOADING_IMAGE_URL: "https://i.imgur.com/OEiiTxw.png",
       LOBBY_IMAGE_URL: "https://i.imgur.com/pGB9giE.png",
       SPECIAL_KEY: '1233',
@@ -169,7 +206,7 @@
       user2: { name: 'stan și bran realitatea plus ❤', password: 'stan123', icon: 'https://via.placeholder.com/150/FFFFFF/000000?text=S' }
     };
 
-    // --- HELPERS (Fixed: Added missing formatDate to prevent Chat crash) ---
+    // --- HELPERS ---
     const formatSize = (bytes) => {
       if (bytes < 1024) return bytes + ' B';
       if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
@@ -256,7 +293,7 @@
       </ModalBackdrop>
     );
 
-    const FileCard = ({ file, onDownload, onDelete, index }) => {
+    const FileCard = ({ file, onDownload, onDelete, index, isNew }) => {
       const cardRef = useRef(null);
       const [transform, setTransform] = useState('');
       const [glowPos, setGlowPos] = useState({ x: 0, y: 0 });
@@ -269,7 +306,6 @@
         const y = e.clientY - rect.top;
         const centerX = rect.width / 2;
         const centerY = rect.height / 2;
-        // Subtle tilt
         const rotateX = ((y - centerY) / centerY) * -5; 
         const rotateY = ((x - centerX) / centerX) * 5;
         setTransform(`perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(1.02)`);
@@ -277,15 +313,20 @@
         setOpacity(1);
       };
 
+      // Determine animation class: if it's new, use the sick fly-in. Otherwise standard slide-up.
+      // Use index for staggered delay
+      const animClass = isNew ? 'animate-fly-in' : 'animate-slide-up';
+      const delay = index * 0.05;
+
       return (
         <div 
           ref={cardRef}
           onMouseMove={handleMouseMove}
           onMouseLeave={() => { setTransform('perspective(1000px) rotateX(0deg) rotateY(0deg) scale(1)'); setOpacity(0); }}
-          className="relative group rounded-[2rem] p-6 h-52 flex flex-col justify-between overflow-hidden transition-all duration-500 ease-out animate-slide-up"
+          className={`relative group rounded-[2rem] p-6 h-52 flex flex-col justify-between overflow-hidden transition-all duration-500 ease-out ${animClass}`}
           style={{ 
             transform,
-            animationDelay: `${index * 0.05}s`,
+            animationDelay: `${delay}s`,
             background: 'rgba(255, 255, 255, 0.03)',
             border: '1px solid rgba(255, 255, 255, 0.08)',
             backdropFilter: 'blur(20px)',
@@ -340,6 +381,8 @@
       const [deleteStep, setDeleteStep] = useState(1);
       const [showITShareLoading, setShowITShareLoading] = useState(false);
       const [isDragging, setIsDragging] = useState(false);
+      // Track which files were just added to animate them specially
+      const [newFileIds, setNewFileIds] = useState(new Set());
 
       const [editingProfile, setEditingProfile] = useState(false);
       const [tempProfile, setTempProfile] = useState({ name: '', icon: '' });
@@ -370,6 +413,16 @@
       }, []);
 
       useEffect(() => { if (currentUser) checkStorageUsage(); }, [currentUser, files]);
+
+      // Clean up newFileIds after animation duration
+      useEffect(() => {
+        if (newFileIds.size > 0) {
+          const timer = setTimeout(() => {
+            setNewFileIds(new Set());
+          }, 2000);
+          return () => clearTimeout(timer);
+        }
+      }, [newFileIds]);
 
       const showNotif = (message, type) => {
         setNotification({ show: true, message, type });
@@ -418,25 +471,76 @@
         setShowLogoutConfirm(false);
       };
 
-      const processUpload = (file) => {
-        if (!currentUser) return;
-        if (file.size > 7 * 1024 * 1024) { showNotif('File too large (Max 7MB)', 'error'); return; }
-        const reader = new FileReader();
-        reader.onload = async (ev) => {
-          const newFile = { id: Date.now(), name: file.name, type: file.type, size: file.size, data: ev.target.result, uploadDate: new Date().toISOString() };
-          const uFiles = files[currentUser] || [];
-          const newUserFiles = [...uFiles, newFile];
-          setFiles({ ...files, [currentUser]: newUserFiles });
-          try { await saveData(`files/${currentUser}`, newUserFiles); showNotif('Upload Complete', 'success'); } 
-          catch (err) { showNotif('Upload Failed', 'error'); }
-        };
-        reader.readAsDataURL(file);
+      // --- MULTIPLE FILE UPLOAD LOGIC ---
+      const processFiles = async (fileList) => {
+        if (!currentUser || !fileList.length) return;
+
+        const processedFiles = [];
+        const errors = [];
+        const ids = new Set();
+
+        // Use Promise.all to process files in parallel
+        await Promise.all(Array.from(fileList).map(file => new Promise((resolve) => {
+           if (file.size > 7 * 1024 * 1024) {
+             errors.push(`${file.name} too large`);
+             resolve();
+             return;
+           }
+
+           const reader = new FileReader();
+           reader.onload = (ev) => {
+             const id = Date.now() + Math.random(); // ensure unique ID for rapid uploads
+             ids.add(id);
+             processedFiles.push({
+               id: id,
+               name: file.name,
+               type: file.type,
+               size: file.size,
+               data: ev.target.result,
+               uploadDate: new Date().toISOString()
+             });
+             resolve();
+           };
+           reader.readAsDataURL(file);
+        })));
+
+        if (processedFiles.length > 0) {
+           const uFiles = files[currentUser] || [];
+           const newUserFiles = [...uFiles, ...processedFiles];
+           
+           // Update state
+           setFiles({ ...files, [currentUser]: newUserFiles });
+           setNewFileIds(ids); // Trigger fly-in animation
+
+           // Save to DB
+           try { 
+             await saveData(`files/${currentUser}`, newUserFiles); 
+             showNotif(`${processedFiles.length} File(s) Encrypted`, 'success'); 
+           } catch (err) { 
+             showNotif('Upload Failed', 'error'); 
+           }
+        }
+
+        if (errors.length > 0) {
+          showNotif(`${errors.length} failed (Size Limit)`, 'error');
+        }
       };
 
-      const handleFileSelect = (e) => { if (e.target.files?.[0]) processUpload(e.target.files[0]); };
+      const handleFileSelect = (e) => { 
+        if (e.target.files && e.target.files.length > 0) {
+          processFiles(e.target.files);
+        }
+      };
+
       const handleDragOver = (e) => { e.preventDefault(); setIsDragging(true); };
       const handleDragLeave = (e) => { e.preventDefault(); setIsDragging(false); };
-      const handleDrop = (e) => { e.preventDefault(); setIsDragging(false); if (e.dataTransfer.files[0]) processUpload(e.dataTransfer.files[0]); };
+      const handleDrop = (e) => { 
+        e.preventDefault(); 
+        setIsDragging(false); 
+        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+          processFiles(e.dataTransfer.files);
+        }
+      };
 
       const handleDeleteRequest = (type, id) => { setDeleteTarget({ type, id }); setDeleteStep(1); setShowDeleteConfirm(true); };
       const proceedDelete = async () => {
@@ -527,7 +631,7 @@
 
       if (view === 'login') {
         return (
-          <div className="perspective-stage">
+          <div className="perspective-stage relative">
             <Notification notification={notification} />
             <div className="absolute top-[-20%] right-[-10%] w-[800px] h-[800px] bg-white/5 rounded-full blur-[150px]"></div>
             <div className="absolute bottom-[-20%] left-[-10%] w-[800px] h-[800px] bg-blue-600/10 rounded-full blur-[150px]"></div>
@@ -563,7 +667,7 @@
                 </div>
               </div>
             ) : (
-              <div className="w-full max-w-6xl animate-morph z-10 p-4">
+              <div className="w-full max-w-6xl animate-morph z-10 p-4 relative">
                 <div className="flex flex-col lg:flex-row items-center gap-8 lg:gap-16">
                   <div className="lg:w-5/12 animate-slide-right hidden lg:block">
                     <img src={CONFIG.LOBBY_IMAGE_URL} alt="Lobby" className="rounded-[2.5rem] border border-white/10 shadow-2xl w-full rotate-2 hover:rotate-0 transition-transform duration-700 ease-out" />
@@ -587,6 +691,12 @@
                       ))}
                     </div>
                   </div>
+                </div>
+                
+                {/* VERSION AND CREDITS - REQUESTED FEATURE */}
+                <div className="absolute -bottom-24 left-0 right-0 text-center animate-fade-in text-gray-500 font-mono text-xs md:text-sm">
+                   <p className="mb-1 opacity-70 tracking-widest">{CONFIG.CREDITS_TEXT}</p>
+                   <p className="opacity-40">{CONFIG.APP_VERSION}</p>
                 </div>
               </div>
             )}
@@ -636,13 +746,14 @@
               {view === 'files' ? (
                 <div className="space-y-6">
                   <div className="animate-morph">
-                      <div onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop} className={`relative group rounded-[2.5rem] border-2 border-dashed transition-all duration-300 w-full p-8 md:p-10 flex flex-col items-center justify-center text-center cursor-pointer overflow-hidden glass ${isDragging ? 'border-white bg-white/10 scale-[1.02] shadow-[0_0_50px_rgba(255,255,255,0.2)]' : 'border-white/20 hover:border-white/50 hover:bg-white/5'}`}>
-                        <input type="file" onChange={handleFileSelect} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20" />
+                      <div onDragOver={handleDragOver} onDragLeave={handleDragLeave} onDrop={handleDrop} className={`relative group rounded-[2.5rem] border-2 border-dashed transition-all duration-300 w-full p-8 md:p-10 flex flex-col items-center justify-center text-center cursor-pointer overflow-hidden glass ${isDragging ? 'border-white bg-white/10 scale-[1.02] shadow-[0_0_50px_rgba(255,255,255,0.2)] animate-warp' : 'border-white/20 hover:border-white/50 hover:bg-white/5'}`}>
+                        {/* ENABLE MULTIPLE FILE UPLOAD */}
+                        <input type="file" multiple onChange={handleFileSelect} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20" />
                         <div className={`w-20 h-20 rounded-full bg-white text-black flex items-center justify-center mb-6 shadow-[0_0_30px_rgba(255,255,255,0.3)] transition-transform duration-500 ${isDragging ? 'scale-125 rotate-6' : 'group-hover:scale-110'}`}>
                            <div className="w-8 h-8"><IconUpload /></div>
                         </div>
-                        <h3 className="text-2xl md:text-3xl font-black text-white mb-2 tracking-tight relative z-10 transition-all">{isDragging ? 'DROP IT HERE' : 'UPLOAD SECURE FILE'}</h3>
-                        <p className="text-gray-400 font-medium relative z-10">{isDragging ? 'Releasing Payload...' : 'Drag & Drop or Click to Browse'}</p>
+                        <h3 className="text-2xl md:text-3xl font-black text-white mb-2 tracking-tight relative z-10 transition-all">{isDragging ? 'INCOMING DATA...' : 'UPLOAD SECURE DATA'}</h3>
+                        <p className="text-gray-400 font-medium relative z-10">{isDragging ? 'Release to Encrypt' : 'Drag Multi-Files or Click to Browse'}</p>
                         <div className={`absolute inset-0 bg-white/5 blur-3xl transition-opacity duration-500 ${isDragging ? 'opacity-100' : 'opacity-0'}`}></div>
                       </div>
                   </div>
@@ -653,6 +764,7 @@
                          key={file.id} 
                          file={file} 
                          index={i}
+                         isNew={newFileIds.has(file.id)}
                          onDownload={() => { const link = document.createElement('a'); link.href = file.data; link.download = file.name; link.click(); showNotif('Decrypted & Downloaded', 'success'); }}
                          onDelete={() => handleDeleteRequest('file', file.id)}
                        />
