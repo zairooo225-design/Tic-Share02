@@ -150,6 +150,7 @@
         await window.firebase.database().ref(path).set(data);
       } catch (error) {
         console.error(`Error saving to ${path}:`, error);
+        throw error; // Changed to throw error so caller handles UI feedback
       }
     };
 
@@ -362,6 +363,13 @@
       const handleFileUpload = (e) => {
         if (!currentUser || !e.target.files?.[0]) return;
         const file = e.target.files[0];
+        
+        // CHECK 1: File Size Limit (7MB approx for Base64 overhead)
+        if (file.size > 7 * 1024 * 1024) {
+          showNotif('File too large (Max 7MB)', 'error');
+          return;
+        }
+
         const reader = new FileReader();
         reader.onload = async (ev) => {
           const newFile = {
@@ -372,11 +380,21 @@
             data: ev.target?.result,
             uploadDate: new Date().toISOString()
           };
+          
           const uFiles = files[currentUser] || [];
-          const updated = { ...files, [currentUser]: [...uFiles, newFile] };
+          const newUserFiles = [...uFiles, newFile];
+          
+          // Update Local State
+          const updated = { ...files, [currentUser]: newUserFiles };
           setFiles(updated);
-          await saveData('files', updated);
-          showNotif('Upload Complete', 'success');
+          
+          // Update Firebase (Scoped to specific user only to avoid 10MB write limit on root)
+          try {
+            await saveData(`files/${currentUser}`, newUserFiles);
+            showNotif('Upload Complete', 'success');
+          } catch (err) {
+            showNotif('Upload Failed: ' + err.message, 'error');
+          }
         };
         reader.readAsDataURL(file);
       };
@@ -393,15 +411,29 @@
 
         if (deleteTarget.type === 'file') {
           const uFiles = files[currentUser] || [];
-          const updated = { ...files, [currentUser]: uFiles.filter(f => f.id !== deleteTarget.id) };
+          const newUserFiles = uFiles.filter(f => f.id !== deleteTarget.id);
+          
+          const updated = { ...files, [currentUser]: newUserFiles };
           setFiles(updated);
-          await saveData('files', updated);
+          
+          try {
+            await saveData(`files/${currentUser}`, newUserFiles);
+            showNotif('Item Erased', 'success');
+          } catch (err) {
+            showNotif('Delete Failed: ' + err.message, 'error');
+          }
+          
         } else if (deleteTarget.type === 'note') {
           const updated = notes.filter(n => n.id !== deleteTarget.id);
           setNotes(updated);
-          await saveData('notes', updated);
+          try {
+            await saveData('notes', updated);
+            showNotif('Item Erased', 'success');
+          } catch (err) {
+            showNotif('Delete Failed: ' + err.message, 'error');
+          }
         }
-        showNotif('Item Erased', 'success');
+        
         setShowDeleteConfirm(false);
         setDeleteTarget({ type: '', id: null });
         setDeleteStep(1);
@@ -419,16 +451,24 @@
         const updated = [note, ...notes];
         setNotes(updated);
         setNewNote('');
-        await saveData('notes', updated);
-        showNotif('Message Encrypted & Sent', 'success');
+        try {
+          await saveData('notes', updated);
+          showNotif('Message Encrypted & Sent', 'success');
+        } catch (err) {
+           showNotif('Error: ' + err.message, 'error');
+        }
       };
 
       const handleUpdateNote = async () => {
         const updated = notes.map(n => n.id === editingNote ? { ...n, text: editNoteText } : n);
         setNotes(updated);
         setEditingNote(null);
-        await saveData('notes', updated);
-        showNotif('Record Updated', 'success');
+        try {
+          await saveData('notes', updated);
+          showNotif('Record Updated', 'success');
+        } catch (err) {
+          showNotif('Update Failed', 'error');
+        }
       };
 
       const handleProfileSave = async () => {
