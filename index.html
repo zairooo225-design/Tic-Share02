@@ -700,9 +700,9 @@
       const handleFilesSelected = (fileList) => {
           if (!currentUser || !fileList.length) return;
           const filesArray = Array.from(fileList);
-          const validFiles = filesArray.filter(f => f.size <= 7 * 1024 * 1024);
+          const validFiles = filesArray.filter(f => f.size <= 500 * 1024 * 1024);
           if (validFiles.length < filesArray.length) {
-              showNotif('Some files too large (>7MB)', 'error');
+              showNotif('Some files too large (>500MB)', 'error');
           }
           if (validFiles.length > 0) {
               setPendingFiles(validFiles);
