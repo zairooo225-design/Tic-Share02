@@ -1,133 +1,55 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { User, Users, FileData, Note, NotificationState, VaultItem } from './types';
-import { CONFIG, DEFAULT_USERS } from './constants';
-import { initFirebase, dbRef, saveData } from './services/firebaseService';
-import { 
-  IconUpload, IconDownload, IconX, IconUser, IconMessage, IconFile, 
-  IconLogOut, IconEdit, IconArrowLeft, IconWarning, IconLink, IconEye, IconPlus, IconKey 
-} from './components/Icons';
-import { Notification } from './components/Notifications';
-import { 
-  ModalBackdrop, PreviewModal, UploadModal, LinkModal, ConfirmationModal 
-} from './components/Modals';
+
+// --- CONSOLIDATED INTERFACES ---
+interface User { name: string; password?: string; icon: string; }
+interface Users { [key: string]: User; }
+interface FileData { id: number; name: string; type: string; size: number; data: string; uploadDate: string; note?: string; }
+interface VaultItem { id: number; site: string; username: string; pass: string; date: string; }
+interface Note { id: number; userId: string; user: string; text: string; date: string; }
+interface NotificationState { show: boolean; message: string; type: 'success' | 'error' | ''; }
+
+// --- CONSOLIDATED CONSTANTS ---
+const CONFIG = {
+  CREDITS_TEXT: "All credits to Zairo & Spv",
+  ITSHARE_URL: "https://imgur.com/a/3bfKVnz",
+  ITSHARE_LOADING_IMAGE_URL: "https://i.imgur.com/OEiiTxw.png",
+  LOBBY_IMAGE_URL: "https://i.imgur.com/pGB9giE.png",
+  SPECIAL_KEY: '1233',
+  MAX_NAME_LENGTH: 20,
+};
+
+const DEFAULT_USERS = {
+  user1: { name: 'Zairo', password: 'zairo123', icon: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Zairo' },
+  user2: { name: 'stan și bran realitatea plus ❤', password: 'stan123', icon: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Stan' }
+};
+
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyBwkx6FZv_pcJr1xkWZ7AvjkPxZxdM2_3g",
+  authDomain: "tic-share.firebaseapp.com",
+  databaseURL: "https://tic-share-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "tic-share",
+  storageBucket: "tic-share.firebasestorage.app",
+  messagingSenderId: "694169491730",
+  appId: "1:694169491730:web:7ac8f7c82cdf471fcffbcb"
+};
+
+// --- CONSOLIDATED ICONS ---
+const IconKey = ({ className = "w-6 h-6" }) => (<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" className={className}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" /></svg>);
+const IconUser = ({ className = "w-6 h-6" }) => (<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" className={className}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>);
+const IconMessage = ({ className = "w-6 h-6" }) => (<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" className={className}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>);
+const IconFile = ({ className = "w-6 h-6" }) => (<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" className={className}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>);
+const IconLogOut = ({ className = "w-6 h-6" }) => (<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" className={className}><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>);
+const IconUpload = () => (<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" className="w-full h-full"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>);
+const IconDownload = () => (<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>);
+const IconX = () => (<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>);
+const IconEye = () => (<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" className="w-5 h-5"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>);
+const IconArrowLeft = () => (<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>);
+const IconWarning = () => (<svg fill="none" stroke="currentColor" viewBox="0 0 24 24" className="w-16 h-16"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>);
 
 // --- HELPERS ---
-const formatSize = (bytes: number) => {
-  if (!bytes) return '';
-  if (bytes < 1024) return bytes + ' B';
-  if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
-  return (bytes / 1048576).toFixed(1) + ' MB';
-};
-
-const formatDate = (iso: string) => {
-  if (!iso) return '';
-  const d = new Date(iso);
-  return `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}`;
-};
-
-const getFavicon = (url: string) => {
-  try {
-    const domain = new URL(url).hostname;
-    // Using a more robust favicon service to prevent "Sony icon" fallback bugs
-    return `https://www.google.com/s2/favicons?domain=${domain}&sz=128`;
-  } catch { return null; }
-};
-
-const FileCard = ({ file, onDownload, onDelete, onPreview, index, isNew, isInitialLoad }: any) => {
-  const cardRef = useRef<HTMLDivElement>(null);
-  const [transform, setTransform] = useState('');
-  const [glowPos, setGlowPos] = useState({ x: 0, y: 0 });
-  const [opacity, setOpacity] = useState(0);
-
-  const handleMouseMove = (e: any) => {
-    if (!cardRef.current) return;
-    const rect = cardRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    const centerX = rect.width / 2;
-    const centerY = rect.height / 2;
-    const rotateX = ((y - centerY) / centerY) * -5; 
-    const rotateY = ((x - centerX) / centerX) * 5;
-    setTransform(`perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(1.02)`);
-    setGlowPos({ x, y });
-    setOpacity(1);
-  };
-
-  let animClass = '';
-  if (isNew) {
-    animClass = 'animate-fly-in';
-  } else if (isInitialLoad) {
-    animClass = 'animate-slide-up';
-  }
-
-  const delay = index * 0.05;
-  const isLink = file.type === 'link';
-  const favicon = isLink ? getFavicon(file.data) : null;
-
-  const handleMainClick = (e: any) => {
-    if (isLink) {
-        window.open(file.data, '_blank');
-    } else {
-        onPreview();
-    }
-  };
-
-  return (
-    <div 
-      ref={cardRef}
-      onClick={handleMainClick}
-      onMouseMove={handleMouseMove}
-      onMouseLeave={() => { setTransform('perspective(1000px) rotateX(0deg) rotateY(0deg) scale(1)'); setOpacity(0); }}
-      className={`relative group rounded-[2rem] p-6 h-60 flex flex-col justify-between overflow-hidden transition-all duration-500 ease-out ${animClass} cursor-pointer`}
-      style={{ 
-        transform,
-        animationDelay: isNew ? '0s' : `${delay}s`,
-        background: 'rgba(255, 255, 255, 0.03)',
-        border: '1px solid rgba(255, 255, 255, 0.08)',
-        backdropFilter: 'blur(20px)',
-        boxShadow: '0 10px 40px -10px rgba(0,0,0,0.5)',
-        willChange: 'transform'
-      }}
-    >
-      <div className="absolute inset-0 pointer-events-none transition-opacity duration-500" style={{ opacity, background: `radial-gradient(400px circle at ${glowPos.x}px ${glowPos.y}px, rgba(255,255,255,0.06), transparent 60%)` }} />
-      <div className={`absolute top-0 right-0 w-32 h-32 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none transition-colors duration-700 ${isLink ? 'bg-green-500/10 group-hover:bg-green-500/20' : 'bg-gradient-to-br from-blue-500/5 to-purple-500/5 group-hover:bg-blue-500/10'}`}></div>
-
-      <div className="relative z-10">
-         <div className="flex justify-between items-start mb-4">
-             <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-white border border-white/10 shadow-lg group-hover:scale-110 transition-transform duration-500 ${isLink ? 'bg-white p-1 overflow-hidden' : 'bg-gradient-to-br from-white/10 to-white/5'}`}>
-                {isLink ? (
-                  favicon ? <img src={favicon} className="w-full h-full object-contain" alt="icon" /> : <IconLink className="w-6 h-6 text-green-400" />
-                ) : <IconFile className="w-6 h-6 opacity-80 group-hover:opacity-100" />}
-             </div>
-             {!isLink && (
-                <button onClick={(e) => { e.stopPropagation(); onPreview(); }} className="w-10 h-10 flex items-center justify-center bg-white/5 border border-white/5 rounded-xl hover:bg-white hover:text-black transition-all text-white/70">
-                    <IconEye />
-                </button>
-             )}
-         </div>
-         <h3 className="font-bold text-xl text-white line-clamp-1 mb-1 tracking-tight">{file.name}</h3>
-         {file.note && <p className="text-xs text-gray-500 italic mb-1 line-clamp-1">"{file.note}"</p>}
-         <p className="text-sm text-gray-400 font-medium font-mono">{isLink ? 'Secure Link' : formatSize(file.size)}</p>
-      </div>
-
-      <div className="flex gap-3 relative z-10 mt-auto opacity-80 group-hover:opacity-100 transition-all duration-300 translate-y-2 group-hover:translate-y-0">
-         {!isLink && (
-             <button onClick={(e) => { e.stopPropagation(); onDownload(); }} className="flex-1 bg-white/10 border border-white/10 text-white py-2.5 rounded-xl font-bold text-sm hover:bg-white hover:text-black transition-all flex items-center justify-center gap-2 backdrop-blur-md">
-                <IconDownload className="w-4 h-4" /> <span className="hidden sm:inline">Save</span>
-             </button>
-         )}
-         {isLink && (
-             <button onClick={(e) => { e.stopPropagation(); window.open(file.data, '_blank'); }} className="flex-1 bg-green-500/10 border border-green-500/20 text-green-400 py-2.5 rounded-xl font-bold text-sm hover:bg-green-500 hover:text-black transition-all flex items-center justify-center gap-2 backdrop-blur-md">
-                <IconLink className="w-4 h-4" /> <span className="hidden sm:inline">Visit</span>
-             </button>
-         )}
-         <button onClick={(e) => { e.stopPropagation(); onDelete(); }} className="w-10 h-10 flex items-center justify-center bg-red-500/10 border border-red-500/50 text-red-400 rounded-xl hover:bg-red-500 hover:text-white transition-all backdrop-blur-md">
-            <IconX className="w-5 h-5" />
-         </button>
-      </div>
-    </div>
-  );
-};
+const formatSize = (bytes: number) => { if (!bytes) return ''; if (bytes < 1024) return bytes + ' B'; if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB'; return (bytes / 1048576).toFixed(1) + ' MB'; };
+const formatDate = (iso: string) => { if (!iso) return ''; const d = new Date(iso); return `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}`; };
+const getFavicon = (url: string) => { try { const domain = new URL(url).hostname; return `https://www.google.com/s2/favicons?domain=${domain}&sz=128`; } catch { return null; } };
 
 const App = () => {
   const [view, setView] = useState('loading');
@@ -139,36 +61,10 @@ const App = () => {
   const [vaultItems, setVaultItems] = useState<VaultItem[]>([]);
   
   const [loginPassword, setLoginPassword] = useState('');
-  const [showPasswordReset, setShowPasswordReset] = useState(false);
-  const [resetKey, setResetKey] = useState('');
-  const [resetUserId, setResetUserId] = useState<string | null>(null);
-  const [newPasswordReset, setNewPasswordReset] = useState('');
-  const [confirmPasswordReset, setConfirmPasswordReset] = useState('');
-  
   const [notification, setNotification] = useState<NotificationState>({ show: false, message: '', type: '' });
-  const [showStorageWarning, setShowStorageWarning] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [deleteTarget, setDeleteTarget] = useState({ type: '', id: null as any });
-  const [deleteStep, setDeleteStep] = useState(1);
-  const [showITShareLoading, setShowITShareLoading] = useState(false);
-  const [isDragging, setIsDragging] = useState(false);
-  
-  const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [showUploadModal, setShowUploadModal] = useState(false);
-  const [showLinkModal, setShowLinkModal] = useState(false);
-  const [previewFile, setPreviewFile] = useState<FileData | null>(null);
-
-  const [newFileIds, setNewFileIds] = useState(new Set());
-  const [isInitialLoad, setIsInitialLoad] = useState(true);
-
-  const [editingProfile, setEditingProfile] = useState(false);
-  const [tempProfile, setTempProfile] = useState({ name: '', icon: '' });
-  const [changingPassword, setChangingPassword] = useState(false);
-  const [passwordChange, setPasswordChange] = useState({ current: '', new: '', confirm: '' });
   const [newNote, setNewNote] = useState('');
-  const [editingNote, setEditingNote] = useState<number | null>(null);
-  const [editNoteText, setEditNoteText] = useState('');
 
   // Vault form state
   const [vSite, setVSite] = useState('');
@@ -177,59 +73,20 @@ const App = () => {
   const [visiblePassIds, setVisiblePassIds] = useState(new Set());
   const [visibleUserIds, setVisibleUserIds] = useState(new Set());
 
-  useEffect(() => {
-    initFirebase();
-    const sessionUser = sessionStorage.getItem('currentUser');
-    if (sessionUser) {
-      setCurrentUser(sessionUser);
-      loadFromFirebase();
-      setView('files');
-    } else {
-      setTimeout(() => {
-        loadFromFirebase();
-        setTimeout(() => setView('login'), 2500);
-      }, 2500);
-    }
-    setTimeout(() => setIsInitialLoad(false), 1500);
-  }, []);
-
-  useEffect(() => { 
-    if (currentUser) {
-        const userFiles = files[currentUser] || [];
-        const totalBytes = userFiles.reduce((acc, file) => acc + (file.size || 0), 0);
-        if ((totalBytes / (1024 * 1024 * 1024)) >= 0.80) setShowStorageWarning(true);
-    }
-  }, [currentUser, files]);
-
-  useEffect(() => {
-    if (newFileIds.size > 0) {
-      const timer = setTimeout(() => {
-        setNewFileIds(new Set());
-      }, 2000);
-      return () => clearTimeout(timer);
-    }
-  }, [newFileIds]);
-
-  const showNotif = (message: string, type: 'success' | 'error') => {
-    setNotification({ show: true, message, type });
-    setTimeout(() => setNotification({ show: false, message: '', type: '' }), 3000);
-  };
+  // --- FIREBASE LOGIC ---
+  const initFirebase = () => { if (window.firebase && !window.firebase.apps.length) { window.firebase.initializeApp(FIREBASE_CONFIG); } };
+  const saveData = async (path: string, data: any) => { try { await window.firebase.database().ref(path).set(data); } catch (e) { console.error(e); } };
 
   const loadFromFirebase = async () => {
     try {
-      const db = (window as any).firebase.database();
+      const db = window.firebase.database();
       const [uSnap, fSnap, nSnap, vSnap] = await Promise.all([
-        db.ref('users').once('value'),
-        db.ref('files').once('value'),
-        db.ref('notes').once('value'),
-        db.ref('vault').once('value')
+        db.ref('users').once('value'), db.ref('files').once('value'),
+        db.ref('notes').once('value'), db.ref('vault').once('value')
       ]);
-      if (uSnap.exists()) setUsers(uSnap.val() as Users);
-      if (fSnap.exists()) setFiles(fSnap.val() as Record<string, FileData[]>);
-      if (nSnap.exists()) {
-          const notesData = nSnap.val();
-          setNotes((Object.values(notesData) as Note[]).sort((a: Note, b: Note) => b.id - a.id));
-      }
+      if (uSnap.exists()) setUsers(uSnap.val());
+      if (fSnap.exists()) setFiles(fSnap.val());
+      if (nSnap.exists()) setNotes((Object.values(nSnap.val()) as Note[]).sort((a, b) => b.id - a.id));
       if (vSnap.exists() && currentUser) {
           const vaultData = vSnap.val()[currentUser];
           if (vaultData) setVaultItems(Object.values(vaultData) as VaultItem[]);
@@ -237,148 +94,42 @@ const App = () => {
     } catch (e) { console.error(e); }
   };
 
+  useEffect(() => {
+    initFirebase();
+    const sessionUser = sessionStorage.getItem('currentUser');
+    if (sessionUser) { setCurrentUser(sessionUser); loadFromFirebase(); setView('files'); }
+    else { setTimeout(() => { loadFromFirebase(); setTimeout(() => setView('login'), 2500); }, 2500); }
+  }, []);
+
+  const showNotif = (message: string, type: 'success' | 'error') => {
+    setNotification({ show: true, message, type });
+    setTimeout(() => setNotification({ show: false, message: '', type: '' }), 3000);
+  };
+
   const handleLogin = () => {
-    if (!selectedUser) return;
-    if (users[selectedUser].password === loginPassword) {
-      setCurrentUser(selectedUser);
-      sessionStorage.setItem('currentUser', selectedUser);
-      setView('files');
-      loadFromFirebase(); 
-      setLoginPassword('');
-      setSelectedUser(null);
-      showNotif('Access Granted', 'success');
-    } else {
-      showNotif('Access Denied', 'error');
-    }
+    if (!selectedUser || users[selectedUser].password !== loginPassword) return showNotif('Auth Failed', 'error');
+    setCurrentUser(selectedUser); sessionStorage.setItem('currentUser', selectedUser);
+    setView('files'); loadFromFirebase(); setLoginPassword(''); setSelectedUser(null);
+    showNotif('Access Granted', 'success');
   };
 
-  const handleLogout = () => {
-    setCurrentUser(null);
-    sessionStorage.removeItem('currentUser');
-    setView('login');
-    setShowLogoutConfirm(false);
-  };
-
-  const handleFilesSelected = (fileList: FileList | null) => {
-      if (!currentUser || !fileList || !fileList.length) return;
-      const filesArray = Array.from(fileList);
-      const validFiles = filesArray.filter(f => f.size <= 500 * 1024 * 1024);
-      if (validFiles.length < filesArray.length) {
-          showNotif('Some files too large (>500MB)', 'error');
-      }
-      if (validFiles.length > 0) {
-          setPendingFiles(validFiles);
-          setShowUploadModal(true);
-      }
-  };
-
-  const processUploads = async (metadata: any[]) => {
-    setShowUploadModal(false);
-    if (!currentUser || !pendingFiles.length) return;
-
-    const processedFiles: FileData[] = [];
-    const ids = new Set();
-
-    await Promise.all(pendingFiles.map((file, i) => new Promise<void>((resolve) => {
-       const reader = new FileReader();
-       reader.onload = (ev) => {
-         const id = Date.now() + Math.random(); 
-         ids.add(id);
-         processedFiles.push({
-           id: id,
-           name: metadata[i].name || file.name,
-           note: metadata[i].note || '',
-           type: file.type,
-           size: file.size,
-           data: ev.target?.result as string,
-           uploadDate: new Date().toISOString()
-         });
-         resolve();
-       };
-       reader.readAsDataURL(file);
-    })));
-
-    if (processedFiles.length > 0) {
-       const uFiles = files[currentUser] || [];
-       const newUserFiles = [...uFiles, ...processedFiles];
-       setFiles({ ...files, [currentUser]: newUserFiles });
-       setNewFileIds(ids); 
-       try { 
-         await saveData(`files/${currentUser}`, newUserFiles); 
-         showNotif(`${processedFiles.length} Item(s) Securely Stored`, 'success'); 
-       } catch (err) { 
-         showNotif('Upload Failed', 'error'); 
-       }
-    }
-    setPendingFiles([]);
-  };
-
-  const handleAddLink = async (linkData: any) => {
-      setShowLinkModal(false);
-      if(!currentUser) return;
-      const id = Date.now() + Math.random();
-      const newLink: FileData = {
-          id,
-          name: linkData.name,
-          note: linkData.note,
-          type: 'link',
-          size: 0,
-          data: linkData.url,
-          uploadDate: new Date().toISOString()
-      };
-      const uFiles = files[currentUser] || [];
-      const newUserFiles = [...uFiles, newLink];
-      setFiles({ ...files, [currentUser]: newUserFiles });
-      setNewFileIds(new Set([id]));
-      try {
-          await saveData(`files/${currentUser}`, newUserFiles);
-          showNotif('Secure Link Added', 'success');
-      } catch {
-          showNotif('Link Save Failed', 'error');
-      }
-  };
-
+  const handleLogout = () => { setCurrentUser(null); sessionStorage.removeItem('currentUser'); setView('login'); setShowLogoutConfirm(false); };
+  
   const handleAddVaultItem = async () => {
     if (!currentUser || !vSite || !vUser || !vPass) return;
-    const item: VaultItem = {
-      id: Date.now(),
-      site: vSite,
-      username: vUser,
-      pass: vPass,
-      date: new Date().toISOString()
-    };
+    const item: VaultItem = { id: Date.now(), site: vSite, username: vUser, pass: vPass, date: new Date().toISOString() };
     const updated = [...vaultItems, item];
-    setVaultItems(updated);
-    setVSite(''); setVUser(''); setVPass('');
-    try {
-      await saveData(`vault/${currentUser}/${item.id}`, item);
-      showNotif('Credentials Secured', 'success');
-    } catch { showNotif('Vault Save Failed', 'error'); }
+    setVaultItems(updated); setVSite(''); setVUser(''); setVPass('');
+    await saveData(`vault/${currentUser}/${item.id}`, item);
+    showNotif('Credentials Secured', 'success');
   };
 
   const deleteVaultItem = async (id: number) => {
     if (!currentUser) return;
     const updated = vaultItems.filter(v => v.id !== id);
     setVaultItems(updated);
-    try {
-      const db = (window as any).firebase.database();
-      await db.ref(`vault/${currentUser}/${id}`).remove();
-      showNotif('Record Erased', 'success');
-    } catch { showNotif('Erasure Failed', 'error'); }
-  };
-
-  const togglePassVisibility = (id: number) => {
-    const newSet = new Set(visiblePassIds);
-    if (newSet.has(id)) newSet.delete(id);
-    else newSet.add(id);
-    setVisiblePassIds(newSet);
-  };
-
-  const toggleUserVisibility = (id: number) => {
-    const newSet = new Set(visibleUserIds);
-    if (newSet.has(id)) newSet.delete(id);
-    else newSet.add(id);
-    setVisibleUserIds(newSet);
+    await window.firebase.database().ref(`vault/${currentUser}/${id}`).remove();
+    showNotif('Record Erased', 'success');
   };
 
   const copyToClipboard = (text: string, label: string) => {
@@ -386,419 +137,260 @@ const App = () => {
     showNotif(`${label} Copied!`, 'success');
   };
 
-  const handleDeleteRequest = (type: string, id: any) => { setDeleteTarget({ type, id }); setDeleteStep(1); setShowDeleteConfirm(true); };
-  const proceedDelete = async () => {
-    if (deleteStep === 1) { setDeleteStep(2); return; }
-    if (!currentUser || !deleteTarget.id) return;
-    if (deleteTarget.type === 'file') {
-      const uFiles = files[currentUser] || [];
-      const newUserFiles = uFiles.filter(f => f.id !== deleteTarget.id);
-      setFiles({ ...files, [currentUser]: newUserFiles });
-      try { await saveData(`files/${currentUser}`, newUserFiles); showNotif('Item Erased', 'success'); } catch { showNotif('Delete Failed', 'error'); }
-    } else if (deleteTarget.type === 'note') {
-      const updated = notes.filter(n => n.id !== deleteTarget.id);
-      setNotes(updated);
-      try { await saveData('notes', updated); showNotif('Item Erased', 'success'); } catch { showNotif('Delete Failed', 'error'); }
-    }
-    setShowDeleteConfirm(false); setDeleteTarget({ type: '', id: null }); setDeleteStep(1);
-  };
-
-  const handleAddNote = async () => {
-    if (!currentUser || !newNote.trim()) return;
-    const note: Note = { id: Date.now(), userId: currentUser, user: users[currentUser].name, text: newNote, date: new Date().toISOString() };
-    const updated = [note, ...notes];
-    setNotes(updated); setNewNote('');
-    try { await saveData('notes', updated); showNotif('Message Encrypted', 'success'); } catch { showNotif('Error', 'error'); }
-  };
-
-  const handleUpdateNote = async () => {
-    const updated = notes.map(n => n.id === editingNote ? { ...n, text: editNoteText } : n);
-    setNotes(updated); setEditingNote(null);
-    try { await saveData('notes', updated); showNotif('Record Updated', 'success'); } catch { showNotif('Update Failed', 'error'); }
-  };
-
-  const handleProfileSave = async () => {
-    if (!currentUser) return;
-    if (tempProfile.name.length > CONFIG.MAX_NAME_LENGTH) { showNotif('Name too long', 'error'); return; }
-    const updated = { ...users, [currentUser]: { ...users[currentUser], ...tempProfile } };
-    setUsers(updated); setEditingProfile(false);
-    await saveData('users', updated); showNotif('Identity Updated', 'success');
-  };
-
-  const handleChangePassword = async () => {
-    if (!currentUser) return;
-    const user = users[currentUser];
-    if (user.password !== passwordChange.current) { showNotif('Auth Failed', 'error'); return; }
-    if (passwordChange.new !== passwordChange.confirm) { showNotif('Mismatch', 'error'); return; }
-    const updated = { ...users, [currentUser]: { ...users[currentUser], password: passwordChange.new } };
-    setUsers(updated); setChangingPassword(false); setPasswordChange({ current: '', new: '', confirm: '' });
-    await saveData('users', updated); showNotif('Security Updated', 'success');
-  };
-
-  const handlePasswordReset = async () => {
-    if (!resetUserId) return;
-    if (resetKey !== CONFIG.SPECIAL_KEY) { showNotif('Invalid Key', 'error'); return; }
-    if (newPasswordReset !== confirmPasswordReset) { showNotif('Mismatch', 'error'); return; }
-    const updated = { ...users, [resetUserId]: { ...users[resetUserId], password: newPasswordReset } };
-    setUsers(updated); await saveData('users', updated); setShowPasswordReset(false); setResetUserId(null); showNotif('Access Restored', 'success');
-  };
-
-  if (view === 'loading') {
-    return (
-      <div className="min-h-screen flex items-center justify-center relative overflow-hidden bg-black">
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-900/20 via-black to-purple-900/20 animate-pulse"></div>
-        <div className="text-center relative z-10 animate-morph px-4">
-          <h1 className="text-5xl md:text-8xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-gray-400 to-white mb-6 tracking-tighter animate-glow">PRIVATE CLOUD</h1>
-          <div className="w-20 h-1 bg-white/20 mx-auto rounded-full overflow-hidden mt-6">
-            <div className="w-full h-full bg-white animate-[translateX_1.5s_ease-in-out_infinite]"></div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (showITShareLoading) {
-    return (
-      <div className="min-h-screen bg-black flex flex-col items-center justify-center animate-morph p-8 relative overflow-hidden">
-        <div className="absolute inset-0 z-0 opacity-30"><div className="absolute top-0 w-full h-1 bg-blue-500 shadow-[0_0_20px_#3b82f6] animate-scan"></div></div>
-        <div className="z-10 text-center animate-morph w-full max-w-4xl">
-          <div className="relative mb-8 inline-block rounded-3xl overflow-hidden shadow-[0_0_50px_rgba(59,130,246,0.5)] border-2 border-blue-500/30 w-full">
-            <img src={CONFIG.ITSHARE_LOADING_IMAGE_URL} alt="Loading" className="w-full h-auto object-contain" />
-          </div>
-          <h2 className="text-3xl md:text-5xl font-black text-white mb-4 tracking-tight">Loading...</h2>
-          <p className="text-blue-400 font-mono tracking-widest text-lg md:text-xl">This wont take long..</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (view === 'login') {
-    return (
-      <div className="perspective-stage relative">
-        <Notification notification={notification} />
-        <div className="absolute top-[-20%] right-[-10%] w-[800px] h-[800px] bg-white/5 rounded-full blur-[150px]"></div>
-        <div className="absolute bottom-[-20%] left-[-10%] w-[800px] h-[800px] bg-blue-600/10 rounded-full blur-[150px]"></div>
-
-        {showPasswordReset ? (
-          <div className="w-full max-w-md animate-morph z-10">
-            <div className="glass-card rounded-[2.5rem] p-6 md:p-10">
-              <button onClick={() => { setShowPasswordReset(false); setResetKey(''); }} className="flex items-center gap-2 text-gray-400 hover:text-white mb-8 transition-colors"><IconArrowLeft /> Back</button>
-              <h2 className="text-3xl font-black text-white mb-8">Override Protocol</h2>
-              <div className="space-y-4">
-                <input type="text" placeholder="Admin Key" value={resetKey} onChange={e => setResetKey(e.target.value)} className="input-field w-full rounded-2xl px-6 py-4 outline-none font-bold text-black bg-white" />
-                <input type="password" placeholder="New Sequence" value={newPasswordReset} onChange={e => setNewPasswordReset(e.target.value)} className="input-field w-full rounded-2xl px-6 py-4 outline-none font-bold text-black bg-white" />
-                <input type="password" placeholder="Confirm Sequence" value={confirmPasswordReset} onChange={e => setConfirmPasswordReset(e.target.value)} className="input-field w-full rounded-2xl px-6 py-4 outline-none font-bold text-black bg-white" />
-              </div>
-              <button onClick={handlePasswordReset} className="w-full mt-8 bg-white text-black rounded-2xl py-4 font-bold hover:scale-[1.02] transition-transform">Execute Reset</button>
-            </div>
-          </div>
-        ) : selectedUser ? (
-          <div className="w-full max-w-md z-10">
-            <div className="animate-flip-open" style={{transformStyle: 'preserve-3d'}}>
-              <div className="glass-card rounded-[2.5rem] p-6 md:p-10">
-                <button onClick={() => setSelectedUser(null)} className="flex items-center gap-2 text-gray-400 hover:text-white mb-8 transition-colors"><IconArrowLeft /> Back</button>
-                <div className="flex flex-col items-center mb-8">
-                  <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-white/20 shadow-2xl mb-6 animate-float">
-                    <img src={users[selectedUser].icon} alt="" className="w-full h-full object-cover" />
-                  </div>
-                  <h2 className="text-3xl font-black text-white tracking-tight">{users[selectedUser].name}</h2>
-                </div>
-                <input type="password" placeholder="Enter Passkey" value={loginPassword} onChange={e => setLoginPassword(e.target.value)} onKeyPress={e => e.key === 'Enter' && handleLogin()} autoFocus className="input-field w-full rounded-2xl px-6 py-4 text-lg outline-none font-bold text-center tracking-widest mb-6 text-black bg-white" />
-                <button onClick={handleLogin} className="w-full bg-white text-black rounded-2xl py-4 font-bold text-lg hover:scale-[1.02] transition-transform shadow-[0_0_20px_rgba(255,255,255,0.2)] mb-4">Authenticate</button>
-                <button onClick={() => { setResetUserId(selectedUser); setShowPasswordReset(true); setSelectedUser(null); }} className="w-full text-gray-500 font-medium hover:text-white transition-colors text-sm">Lost Credentials?</button>
-              </div>
-            </div>
-          </div>
-        ) : (
-          <div className="w-full max-w-6xl animate-morph z-10 p-4 relative">
-            <div className="flex flex-col lg:flex-row items-center gap-8 lg:gap-16">
-              <div className="lg:w-5/12 animate-slide-right hidden lg:block">
-                <img src={CONFIG.LOBBY_IMAGE_URL} alt="Lobby" className="rounded-[2.5rem] border border-white/10 shadow-2xl w-full rotate-2 hover:rotate-0 transition-transform duration-700 ease-out" />
-              </div>
-              <div className="lg:w-7/12 w-full">
-                <h1 className="text-5xl md:text-8xl font-black text-white mb-6 tracking-tighter animate-slide-up text-transparent bg-clip-text bg-gradient-to-br from-white to-gray-500">PRIVATE<br/>CLOUD</h1>
-                <p className="text-xl md:text-2xl text-gray-400 mb-8 md:mb-12 font-light border-l-4 border-white pl-6 animate-slide-up" style={{animationDelay: '0.1s'}}>Secure Vault Access</p>
-                <div className="grid gap-6">
-                  {Object.entries(users).map(([uid, u], i) => (
-                    <div key={uid} onClick={() => setSelectedUser(uid)} className="group glass p-4 rounded-3xl cursor-pointer flex items-center gap-6 hover-morph" style={{ animationDelay: `${i * 0.1}s` }}>
-                      <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-white/10 group-hover:border-white transition-colors flex-shrink-0">
-                        <img src={u.icon} alt="" className="w-full h-full object-cover" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h2 className="text-xl md:text-2xl font-bold text-white truncate">{u.name}</h2>
-                      </div>
-                      <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center group-hover:bg-white group-hover:text-black transition-all flex-shrink-0">
-                        <svg className="w-6 h-6 transform -rotate-45 group-hover:rotate-0 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-            <div className="absolute -bottom-24 left-0 right-0 text-center animate-fade-in text-gray-500 font-mono text-xs md:text-sm">
-               <p className="mb-1 opacity-70 tracking-widest">{CONFIG.CREDITS_TEXT}</p>
-            </div>
-          </div>
-        )}
-      </div>
-    );
-  }
-
   const currentUserData = currentUser ? users[currentUser] : null;
-  if (!currentUserData) return null;
-  const showEditModal = editingProfile || changingPassword;
 
   return (
-    <div className="min-h-screen bg-black p-4 md:p-8 relative selection:bg-white selection:text-black">
-      <Notification notification={notification} />
-      <div className="fixed inset-0 pointer-events-none z-0">
-         <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-white/5 rounded-full blur-[100px]"></div>
-      </div>
-
-      {!showEditModal && (
-        <button onClick={() => { setShowITShareLoading(true); setTimeout(() => { window.location.href = CONFIG.ITSHARE_URL }, 3400); }} className="fixed top-4 left-4 md:top-6 md:left-6 z-50 glass text-white px-4 py-2 md:px-6 md:py-3 rounded-2xl font-bold text-sm md:text-base hover:bg-white hover:text-black transition-all shadow-2xl animate-glow">
-          ITSHARE Converter
-        </button>
+    <div className="min-h-screen bg-black selection:bg-white selection:text-black">
+      {/* NOTIFICATION UI */}
+      {notification.show && (
+        <div className={`fixed top-6 right-6 z-[9999] px-7 py-5 rounded-[1.5rem] font-black shadow-2xl animate-morph glass flex items-center gap-4 ${notification.type === 'success' ? 'border-l-4 border-green-500' : 'border-l-4 border-red-500'}`}>
+          <span className="text-xl">{notification.type === 'success' ? '✅' : '❌'}</span>
+          <p className="text-sm uppercase tracking-widest">{notification.message}</p>
+        </div>
       )}
 
-      <div className="max-w-7xl mx-auto relative z-10 pt-20 md:pt-24">
-        <div className="glass-card rounded-[2.5rem] p-6 md:p-8 shadow-2xl mb-8 animate-slide-up flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="flex flex-col md:flex-row items-center gap-6 w-full md:w-auto text-center md:text-left">
-            <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-white/20 shadow-2xl animate-float">
-              <img src={currentUserData.icon} alt="" className="w-full h-full object-cover" />
+      {/* LOADING SCREEN */}
+      {view === 'loading' && (
+        <div className="min-h-screen flex items-center justify-center relative overflow-hidden bg-black">
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-900/10 via-black to-purple-900/10 animate-pulse"></div>
+          <div className="text-center relative z-10 animate-morph">
+            <h1 className="text-6xl md:text-9xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-gray-600 to-white mb-8 tracking-tighter">PRIVATE CLOUD</h1>
+            <div className="w-24 h-1.5 bg-white/10 mx-auto rounded-full overflow-hidden mt-8">
+              <div className="w-full h-full bg-white animate-shuttle"></div>
             </div>
-            <div>
-              <h1 className="text-3xl md:text-4xl font-black text-white tracking-tight mb-1">{currentUserData.name}</h1>
-              <div className="flex items-center justify-center md:justify-start gap-2 text-gray-400 font-medium bg-white/5 border border-white/10 px-4 py-1 rounded-full w-fit mx-auto md:mx-0">
-                <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
-                {(files[currentUser!] || []).length} Encrypted Files
-              </div>
-            </div>
-          </div>
-          <div className="flex gap-4 w-full md:w-auto justify-center">
-             <button onClick={() => setView('vault')} className={`p-3 md:p-4 rounded-2xl border transition-all hover-morph ${view === 'vault' ? 'bg-white text-black border-white' : 'bg-white/5 border-white/10 text-white hover:bg-white hover:text-black'}`}><IconKey /></button>
-             <button onClick={() => { setTempProfile({ name: currentUserData.name, icon: currentUserData.icon }); setEditingProfile(true); }} className="p-3 md:p-4 rounded-2xl bg-white/5 border border-white/10 hover:bg-white hover:text-black transition-all hover-morph text-white"><IconUser /></button>
-             <button onClick={() => { if (view === 'vault') setView('files'); else setView(view === 'files' ? 'notes' : 'files'); }} className={`p-3 md:p-4 rounded-2xl bg-white/5 border border-white/10 hover:bg-white hover:text-black transition-all hover-morph text-white`}>{view === 'files' ? <IconMessage /> : <IconFile />}</button>
-             <button onClick={() => setShowLogoutConfirm(true)} className="p-3 md:p-4 rounded-2xl bg-red-500/10 border border-red-500/50 text-red-500 hover:bg-red-500 hover:text-white transition-all hover-morph"><IconLogOut /></button>
           </div>
         </div>
+      )}
 
-        <div className="animate-morph pb-20 md:pb-0" style={{animationDelay: '0.2s'}}>
-          {view === 'files' && (
-            <div className="space-y-6">
-              <div className="animate-morph">
-                  <div 
-                    onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }} 
-                    onDragLeave={(e) => { e.preventDefault(); setIsDragging(false); }} 
-                    onDrop={(e) => { e.preventDefault(); setIsDragging(false); if (e.dataTransfer.files) handleFilesSelected(e.dataTransfer.files); }} 
-                    className={`relative group rounded-[2.5rem] border-2 border-dashed transition-all duration-300 w-full p-8 md:p-10 flex flex-col items-center justify-center text-center cursor-pointer overflow-hidden glass ${isDragging ? 'border-blue-500 bg-blue-500/10 scale-[1.02]' : 'border-white/20 hover:border-blue-500/50 hover:bg-blue-500/5 hover:scale-[1.02]'}`}
-                  >
-                    <input type="file" multiple onChange={(e) => handleFilesSelected(e.target.files)} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20" />
-                    <div className={`w-20 h-20 rounded-full bg-white text-black flex items-center justify-center mb-6 shadow-[0_0_30px_rgba(255,255,255,0.3)] transition-transform duration-500 ${isDragging ? 'scale-125 rotate-6' : 'group-hover:scale-110'}`}>
-                       <div className="w-8 h-8"><IconUpload /></div>
-                    </div>
-                    <h3 className="text-2xl md:text-3xl font-black text-white mb-2 tracking-tight relative z-10 transition-all">{isDragging ? 'INCOMING DATA...' : 'UPLOAD SECURE DATA'}</h3>
-                    <p className="text-gray-400 font-medium relative z-10">{isDragging ? 'Release to Encrypt' : 'Drag Multi-Files or Click to Browse'}</p>
-                    <div className={`absolute inset-0 bg-blue-500/10 blur-3xl transition-opacity duration-500 ${isDragging ? 'opacity-100' : 'opacity-0'}`}></div>
-                    <div className="relative z-30 mt-4 pointer-events-none">
-                        <div className="inline-flex items-center justify-center bg-white/10 rounded-xl px-4 py-2 pointer-events-auto hover:bg-white/20 transition-colors" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowLinkModal(true); }}>
-                            <IconLink className="w-4 h-4 mr-2" /> <span className="text-sm font-bold text-white">Add Secure Link</span>
-                        </div>
-                    </div>
-                  </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {(files[currentUser!] || []).map((file, i) => (
-                   <FileCard 
-                     key={file.id} 
-                     file={file} 
-                     index={i}
-                     isNew={newFileIds.has(file.id)}
-                     isInitialLoad={isInitialLoad}
-                     onDownload={() => { const link = document.createElement('a'); link.href = file.data; link.download = file.name; link.click(); showNotif('Decrypted & Downloaded', 'success'); }}
-                     onDelete={() => handleDeleteRequest('file', file.id)}
-                     onPreview={() => setPreviewFile(file)}
-                   />
-                ))}
-                {(files[currentUser!] || []).length === 0 && (
-                  <div className="col-span-full py-20 text-center text-gray-500 glass rounded-[3rem] border-dashed animate-morph">
-                    <p className="text-xl tracking-widest">NO SECURE FILES FOUND</p>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {view === 'notes' && (
-            <div className="flex flex-col lg:grid lg:grid-cols-12 gap-8 h-auto lg:h-[calc(100vh-300px)]">
-               <div className="order-1 lg:order-none lg:col-span-4 glass-card rounded-[2.5rem] p-8 h-auto lg:h-full flex flex-col animate-slide-right border border-white/10 shrink-0">
-                  <h3 className="text-2xl font-black mb-6 text-white">Encrypted Note</h3>
-                  <textarea value={newNote} onChange={e => setNewNote(e.target.value)} placeholder="Type classified info..." className="flex-1 w-full bg-black/50 border border-white/10 focus:border-white rounded-2xl p-4 resize-none outline-none transition-all mb-4 text-lg text-white placeholder-gray-600 min-h-[150px] lg:min-h-0" />
-                  <button onClick={handleAddNote} className="w-full bg-white text-black py-4 rounded-2xl font-bold hover:scale-[1.02] active:scale-95 transition-all shadow-[0_0_20px_rgba(255,255,255,0.2)]">SEND TO CLOUD</button>
-               </div>
-               <div className="order-2 lg:order-none lg:col-span-8 space-y-4 overflow-y-auto pr-2 pb-4 lg:pb-20 h-[60vh] lg:h-full custom-scrollbar">
-                 {notes.length === 0 ? (
-                    <div className="glass border-dashed rounded-[2.5rem] h-full flex items-center justify-center text-gray-600 tracking-widest min-h-[200px]">NO TRANSMISSIONS</div>
-                 ) : (
-                    notes.map((note, i) => (
-                      <div key={note.id} className={`p-6 rounded-[2rem] animate-slide-up transition-all hover:translate-y-[-2px] border ${note.userId === currentUser ? 'bg-white text-black ml-4 md:ml-12 border-white' : 'bg-black/40 text-white mr-4 md:mr-12 border-white/10'}`} style={{ animationDelay: `${i * 0.05}s` }}>
-                         <div className="flex items-center justify-between mb-2">
-                           <span className="font-bold text-sm opacity-50 uppercase tracking-wider">{note.user}</span>
-                           <span className="text-xs opacity-50">{formatDate(note.date)}</span>
-                         </div>
-                         {editingNote === note.id ? (
-                           <div className="animate-morph">
-                             <textarea value={editNoteText} onChange={e => setEditNoteText(e.target.value)} className="w-full bg-gray-100 text-black border-2 border-black rounded-xl p-3 mb-2 outline-none" autoFocus />
-                             <div className="flex justify-end gap-2">
-                               <button onClick={() => setEditingNote(null)} className="px-4 py-2 text-sm font-bold text-gray-500 hover:bg-gray-200 rounded-xl">Cancel</button>
-                               <button onClick={handleUpdateNote} className="px-4 py-2 text-sm font-bold bg-black text-white rounded-xl">Save</button>
-                             </div>
-                           </div>
-                         ) : (
-                           <p className="text-lg font-medium whitespace-pre-wrap leading-relaxed">{note.text}</p>
-                         )}
-                         {note.userId === currentUser && !editingNote && (
-                           <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-black/10 opacity-0 group-hover:opacity-100 transition-opacity">
-                             <button onClick={() => { setEditingNote(note.id); setEditNoteText(note.text); }} className="text-blue-600 hover:bg-blue-50 p-2 rounded-lg transition-colors"><IconEdit /></button>
-                             <button onClick={() => handleDeleteRequest('note', note.id)} className="text-red-600 hover:bg-red p-2 rounded-lg transition-colors"><IconX /></button>
-                           </div>
-                         )}
-                      </div>
-                    ))
-                 )}
-               </div>
-            </div>
-          )}
-
-          {view === 'vault' && (
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start animate-fade-in">
-              <div className="lg:col-span-4 glass-card rounded-[3rem] p-8 border border-white/10 shadow-2xl">
-                <h3 className="text-3xl font-black mb-8 text-white tracking-tight">Vault Entry</h3>
-                <div className="space-y-6 mb-8">
-                   <div className="group">
-                      <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-2 ml-2 font-black">Target Service</p>
-                      <input type="text" placeholder="e.g. Roblox, Google" value={vSite} onChange={e => setVSite(e.target.value)} className="input-premium w-full rounded-2xl p-5 outline-none font-bold text-white text-lg" />
+      {/* LOGIN VIEW */}
+      {view === 'login' && (
+        <div className="perspective-stage">
+           {selectedUser ? (
+             <div className="w-full max-w-md animate-reveal">
+                <div className="glass-card rounded-[3.5rem] p-12 text-center">
+                   <button onClick={() => setSelectedUser(null)} className="flex items-center gap-2 text-gray-500 hover:text-white mb-10 transition-colors uppercase font-black text-xs tracking-widest"><IconArrowLeft /> Back</button>
+                   <div className="w-36 h-36 rounded-full overflow-hidden border-4 border-white/10 mx-auto mb-8 animate-float shadow-2xl">
+                      <img src={users[selectedUser].icon} alt="" className="w-full h-full object-cover" />
                    </div>
-                   <div className="group">
-                      <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-2 ml-2 font-black">Identity / ID</p>
-                      <input type="text" placeholder="Username / Email" value={vUser} onChange={e => setVUser(e.target.value)} className="input-premium w-full rounded-2xl p-5 outline-none font-bold text-white text-lg" />
-                   </div>
-                   <div className="group">
-                      <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-2 ml-2 font-black">Security Sequence</p>
-                      <input type="password" placeholder="Passkey" value={vPass} onChange={e => setVPass(e.target.value)} className="input-premium w-full rounded-2xl p-5 outline-none font-bold text-white text-lg" />
-                   </div>
+                   <h2 className="text-4xl font-black mb-10 tracking-tight">{users[selectedUser].name}</h2>
+                   <input type="password" placeholder="Passkey" value={loginPassword} onChange={e => setLoginPassword(e.target.value)} onKeyPress={e => e.key === 'Enter' && handleLogin()} autoFocus className="input-premium w-full rounded-2xl p-6 text-center font-bold tracking-[0.6em] mb-8 text-xl" />
+                   <button onClick={handleLogin} className="w-full bg-white text-black py-6 rounded-3xl font-black text-sm uppercase tracking-[0.2em] hover:scale-[1.03] transition-transform shadow-[0_15px_40px_rgba(255,255,255,0.15)]">Authenticate</button>
                 </div>
-                <button onClick={handleAddVaultItem} className="w-full bg-white text-black py-5 rounded-3xl font-black text-xs uppercase tracking-widest hover:scale-[1.02] active:scale-95 transition-all shadow-[0_10px_30px_rgba(255,255,255,0.2)]">Vault Credentials</button>
-              </div>
-              <div className="lg:col-span-8 grid grid-cols-1 md:grid-cols-2 gap-6 h-[calc(100vh-400px)] overflow-y-auto custom-scrollbar pr-4 pb-12">
-                 {vaultItems.length === 0 ? (
-                    <div className="col-span-full py-32 text-center text-gray-600 glass rounded-[3rem] border-dashed border-white/10 uppercase tracking-[0.3em] font-black animate-pulse">Vault Empty</div>
-                 ) : (
-                   vaultItems.map((item, i) => (
-                     <div key={item.id} className="glass p-8 rounded-[2.5rem] border border-white/10 relative group hover-morph animate-stagger-fade" style={{ animationDelay: `${i * 0.1}s`, animationFillMode: 'forwards' }}>
-                        <button onClick={() => deleteVaultItem(item.id)} className="absolute top-6 right-6 text-red-500/40 opacity-0 group-hover:opacity-100 transition-all p-3 hover:bg-red-500/10 hover:text-red-500 rounded-xl">
-                           <IconX className="w-5 h-5" />
-                        </button>
-                        
-                        <div className="flex items-center gap-4 mb-8">
-                           <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500/20 to-purple-500/20 border border-white/10 flex items-center justify-center shadow-inner">
-                              <IconKey className="w-7 h-7 text-blue-400 group-hover:rotate-12 transition-transform duration-500" />
-                           </div>
-                           <h4 className="text-2xl font-black text-white truncate tracking-tight">{item.site}</h4>
-                        </div>
-                        
-                        <div className="space-y-4">
-                           <div className="flex flex-col gap-1.5">
-                              <div className="flex justify-between items-center px-1">
-                                 <p className="text-[9px] text-gray-500 uppercase tracking-widest font-black">User: {visibleUserIds.has(item.id) ? 'SHOWING' : 'HIDDEN'}</p>
-                                 <button onClick={() => copyToClipboard(item.username, 'User')} className="text-[9px] text-blue-400/50 hover:text-blue-400 font-bold uppercase tracking-tighter transition-colors">Copy</button>
-                              </div>
-                              <div className="flex items-center gap-3">
-                                <div className="flex-1 bg-black/60 p-4 rounded-2xl font-mono text-sm border border-white/5 truncate text-white/90 shadow-inner group-hover:border-white/10 transition-colors">
-                                  {visibleUserIds.has(item.id) ? item.username : '••••••••••••'}
-                                </div>
-                                <button onClick={() => toggleUserVisibility(item.id)} className={`p-4 rounded-2xl border transition-all ${visibleUserIds.has(item.id) ? 'bg-white text-black border-white' : 'bg-white/5 border-white/5 text-white/40 hover:bg-white/10 hover:text-white'}`}>
-                                   <IconEye className="w-5 h-5" />
-                                </button>
-                              </div>
-                           </div>
-
-                           <div className="flex flex-col gap-1.5">
-                              <div className="flex justify-between items-center px-1">
-                                 <p className="text-[9px] text-gray-500 uppercase tracking-widest font-black">Pass: {visiblePassIds.has(item.id) ? 'SHOWING' : 'HIDDEN'}</p>
-                                 <button onClick={() => copyToClipboard(item.pass, 'Pass')} className="text-[9px] text-blue-400/50 hover:text-blue-400 font-bold uppercase tracking-tighter transition-colors">Copy</button>
-                              </div>
-                              <div className="flex items-center gap-3">
-                                <div className="flex-1 bg-black/60 p-4 rounded-2xl font-mono text-sm border border-white/5 truncate text-white/90 shadow-inner group-hover:border-white/10 transition-colors">
-                                  {visiblePassIds.has(item.id) ? item.pass : '••••••••••••'}
-                                </div>
-                                <button onClick={() => togglePassVisibility(item.id)} className={`p-4 rounded-2xl border transition-all ${visiblePassIds.has(item.id) ? 'bg-white text-black border-white' : 'bg-white/5 border-white/5 text-white/40 hover:bg-white/10 hover:text-white'}`}>
-                                   <IconEye className="w-5 h-5" />
-                                </button>
-                              </div>
-                           </div>
-                        </div>
-                        
-                        <div className="mt-8 pt-4 border-t border-white/5 flex justify-between items-center">
-                           <span className="text-[8px] font-mono text-gray-600 uppercase tracking-[0.2em]">{formatDate(item.date)}</span>
-                           <span className="text-[8px] font-black text-blue-500/30 uppercase tracking-widest">Secure Record</span>
-                        </div>
-                     </div>
-                   ))
-                 )}
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {showLogoutConfirm && <ConfirmationModal title="Terminate Session?" message="Secure connection will be severed." confirmText="Log Off" onConfirm={handleLogout} onCancel={() => setShowLogoutConfirm(false)} isDanger />}
-      {showDeleteConfirm && <ConfirmationModal title="Confirm Deletion" message="This data cannot be recovered. Proceed?" confirmText="Obliterate" onConfirm={proceedDelete} onCancel={() => { setShowDeleteConfirm(false); setDeleteStep(1); }} isDanger />}
-      {showStorageWarning && <ModalBackdrop onClose={() => setShowStorageWarning(false)}><div className="text-center text-white"><div className="text-6xl mb-4 animate-bounce">⚠️</div><h2 className="text-2xl font-bold mb-2">Capacity Critical</h2><p className="text-gray-400 mb-6">Storage Usage > 80%</p><button onClick={() => setShowStorageWarning(false)} className="w-full bg-white text-black py-3 rounded-2xl font-bold">Acknowledge</button></div></ModalBackdrop>}
-      
-      {showUploadModal && <UploadModal pendingFiles={pendingFiles} onClose={() => { setShowUploadModal(false); setPendingFiles([]); }} onUpload={processUploads} />}
-      {showLinkModal && <LinkModal onClose={() => setShowLinkModal(false)} onAdd={handleAddLink} />}
-      {previewFile && <PreviewModal file={previewFile} onClose={() => setPreviewFile(null)} />}
-
-      {showEditModal && (
-        <ModalBackdrop onClose={() => { setEditingProfile(false); setChangingPassword(false); }}>
-           {changingPassword ? (
-             <div key="password-form" className="animate-morph text-white">
-               <h2 className="text-2xl font-bold mb-6">Update Protocol</h2>
-               <div className="space-y-4 mb-6">
-                 <input type="password" placeholder="Current Key" value={passwordChange.current} onChange={e => setPasswordChange({...passwordChange, current: e.target.value})} className="input-field w-full rounded-2xl px-6 py-4 font-bold text-black bg-white" />
-                 <input type="password" placeholder="New Key" value={passwordChange.new} onChange={e => setPasswordChange({...passwordChange, new: e.target.value})} className="input-field w-full rounded-2xl px-6 py-4 font-bold text-black bg-white" />
-                 <input type="password" placeholder="Verify Key" value={passwordChange.confirm} onChange={e => setPasswordChange({...passwordChange, confirm: e.target.value})} className="input-field w-full rounded-2xl px-6 py-4 font-bold text-black bg-white" />
-               </div>
-               <div className="flex gap-4">
-                 <button onClick={handleChangePassword} className="flex-1 bg-white text-black py-3 rounded-xl font-bold hover:scale-105 transition-transform">Update</button>
-                 <button onClick={() => setChangingPassword(false)} className="flex-1 bg-transparent border border-white/20 text-white py-3 rounded-xl font-bold">Cancel</button>
-               </div>
              </div>
            ) : (
-             <div key="profile-form" className="animate-morph text-white">
-                <h2 className="text-2xl font-bold mb-6">Modify Profile</h2>
-                <div className="flex justify-center mb-6">
-                   <div className="relative group">
-                     <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-white/20">
-                       <img src={tempProfile.icon} alt="" className="w-full h-full object-cover" />
+             <div className="w-full max-w-5xl text-center px-6">
+                <h1 className="text-7xl md:text-[10rem] font-black text-white mb-20 tracking-tighter animate-morph">VAULT</h1>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                   {Object.entries(users).map(([uid, u], i) => (
+                     <div key={uid} onClick={() => setSelectedUser(uid)} className="group glass p-10 rounded-[4rem] cursor-pointer flex items-center gap-10 hover-lift animate-reveal" style={{animationDelay: `${i*0.1}s`}}>
+                        <div className="w-28 h-28 rounded-full overflow-hidden border-4 border-white/10 group-hover:border-white transition-colors shadow-2xl">
+                           <img src={u.icon} alt="" className="w-full h-full object-cover" />
+                        </div>
+                        <h2 className="text-3xl font-black text-white text-left tracking-tight">{u.name}</h2>
                      </div>
-                     <label className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-full cursor-pointer font-bold tracking-widest backdrop-blur-sm">
-                       UPLOAD
-                       <input type="file" onChange={e => { const f = e.target.files?.[0]; if (f) { const r = new FileReader(); r.onload = ev => setTempProfile({...tempProfile, icon: ev.target?.result as string}); r.readAsDataURL(f); } }} className="hidden" />
-                     </label>
-                   </div>
-                </div>
-                <input type="text" value={tempProfile.name} onChange={e => setTempProfile({...tempProfile, name: e.target.value})} maxLength={CONFIG.MAX_NAME_LENGTH} className="input-field w-full p-4 rounded-xl mb-2 font-bold text-center text-xl text-black bg-white" />
-                <p className="text-xs text-center text-gray-500 mb-6">{tempProfile.name.length}/{CONFIG.MAX_NAME_LENGTH}</p>
-                <div className="flex gap-3">
-                   <button onClick={handleProfileSave} className="flex-1 bg-white text-black py-3 rounded-xl font-bold hover:scale-105 transition-transform">Save</button>
-                   <button onClick={() => { setEditingProfile(false); setChangingPassword(true); }} className="flex-1 bg-transparent border border-white/20 text-white py-3 rounded-xl font-bold hover:bg-white/5">Keys</button>
+                   ))}
                 </div>
              </div>
            )}
-        </ModalBackdrop>
+        </div>
+      )}
+
+      {/* MAIN CONTENT */}
+      {currentUserData && view !== 'login' && view !== 'loading' && (
+        <div className="max-w-7xl mx-auto px-6 md:px-12 py-24 md:py-32 relative z-10">
+          {/* NAVIGATION BAR */}
+          <div className="glass-card rounded-[3.5rem] p-10 mb-16 flex flex-col md:flex-row items-center justify-between gap-10 animate-reveal">
+            <div className="flex items-center gap-8">
+              <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-white/10 animate-float shadow-2xl"><img src={currentUserData.icon} alt="" className="w-full h-full object-cover" /></div>
+              <div>
+                <h1 className="text-4xl font-black text-white tracking-tighter">{currentUserData.name}</h1>
+                <div className="flex items-center gap-2 mt-2">
+                   <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                   <p className="text-gray-500 font-black uppercase tracking-[0.3em] text-[10px]">Active Session</p>
+                </div>
+              </div>
+            </div>
+            <div className="flex gap-5">
+               <button onClick={() => setView('vault')} className={`p-5 rounded-2xl border transition-all hover-lift shadow-xl ${view === 'vault' ? 'bg-white text-black border-white' : 'bg-white/5 border-white/10 text-white'}`}><IconKey /></button>
+               <button onClick={() => setView(view === 'files' ? 'notes' : 'files')} className={`p-5 rounded-2xl border transition-all hover-lift shadow-xl ${view !== 'vault' ? 'bg-white text-black border-white' : 'bg-white/5 border-white/10 text-white'}`}>{view === 'files' ? <IconMessage /> : <IconFile />}</button>
+               <button onClick={() => setShowLogoutConfirm(true)} className="p-5 rounded-2xl bg-red-500/10 border border-red-500/50 text-red-500 hover:bg-red-500 hover:text-white transition-all hover-lift shadow-xl"><IconLogOut /></button>
+            </div>
+          </div>
+
+          <div className="animate-morph">
+            {view === 'vault' ? (
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 items-start">
+                {/* VAULT INPUT FORM */}
+                <div className="lg:col-span-4 glass-card rounded-[3.5rem] p-12 border border-white/10 shadow-2xl animate-reveal">
+                  <h3 className="text-3xl font-black mb-12 text-white tracking-tight">Vault Entry</h3>
+                  <div className="space-y-8 mb-12">
+                     <div className="group">
+                        <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-3 ml-3 font-black">Service / Site</p>
+                        <input type="text" placeholder="e.g. Roblox, Discord" value={vSite} onChange={e => setVSite(e.target.value)} className="input-premium w-full rounded-2xl p-6 font-bold text-white text-lg" />
+                     </div>
+                     <div className="group">
+                        <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-3 ml-3 font-black">Identity / ID</p>
+                        <input type="text" placeholder="Username" value={vUser} onChange={e => setVUser(e.target.value)} className="input-premium w-full rounded-2xl p-6 font-bold text-white text-lg" />
+                     </div>
+                     <div className="group">
+                        <p className="text-[10px] text-gray-500 uppercase tracking-widest mb-3 ml-3 font-black">Security Sequence</p>
+                        <input type="password" placeholder="Passkey" value={vPass} onChange={e => setVPass(e.target.value)} className="input-premium w-full rounded-2xl p-6 font-bold text-white text-lg" />
+                     </div>
+                  </div>
+                  <button onClick={handleAddVaultItem} className="w-full bg-white text-black py-7 rounded-[2rem] font-black text-xs uppercase tracking-[0.3em] hover:scale-[1.02] active:scale-95 transition-all shadow-2xl">Vault Credentials</button>
+                </div>
+
+                {/* VAULT ITEMS LIST */}
+                <div className="lg:col-span-8 grid grid-cols-1 md:grid-cols-2 gap-10 h-[calc(100vh-450px)] overflow-y-auto custom-scrollbar pr-6 pb-24">
+                   {vaultItems.length === 0 ? (
+                      <div className="col-span-full py-48 text-center glass rounded-[4rem] border-dashed border-white/10 text-gray-700 font-black uppercase tracking-[0.8em] animate-pulse text-sm">Vault Empty</div>
+                   ) : (
+                     vaultItems.map((item, i) => (
+                       <div key={item.id} className="glass p-12 rounded-[4rem] border border-white/10 relative group hover-lift animate-reveal" style={{animationDelay: `${i*0.1}s`, animationFillMode: 'forwards'}}>
+                          <button onClick={() => deleteVaultItem(item.id)} className="absolute top-10 right-10 text-red-500/40 opacity-0 group-hover:opacity-100 transition-all p-4 hover:bg-red-500/10 hover:text-red-500 rounded-2xl shadow-lg"><IconX /></button>
+                          
+                          <div className="flex items-center gap-6 mb-12">
+                             <div className="w-16 h-16 rounded-[1.5rem] bg-gradient-to-br from-blue-500/20 to-purple-500/20 flex items-center justify-center border border-white/10 shadow-inner">
+                                <IconKey className="w-8 h-8 text-blue-400 group-hover:rotate-12 transition-transform duration-500" />
+                             </div>
+                             <h4 className="text-3xl font-black text-white tracking-tighter truncate">{item.site}</h4>
+                          </div>
+                          
+                          <div className="space-y-8">
+                             {/* MASKED USERNAME FIELD */}
+                             <div className="space-y-3">
+                                <div className="flex justify-between items-center px-2">
+                                   <p className="text-[10px] text-gray-500 uppercase tracking-widest font-black">User: {visibleUserIds.has(item.id) ? 'Showing' : 'Hidden'}</p>
+                                   <button onClick={() => copyToClipboard(item.username, 'Username')} className="text-[10px] text-blue-400 font-black hover:text-white transition-colors uppercase tracking-widest">Copy</button>
+                                </div>
+                                <div className="flex items-center gap-4">
+                                  <div className="flex-1 bg-black/60 p-6 rounded-[1.5rem] font-mono text-sm border border-white/5 truncate text-white/80 shadow-inner group-hover:border-white/10 transition-colors">
+                                    {visibleUserIds.has(item.id) ? item.username : '••••••••••••'}
+                                  </div>
+                                  <button onClick={() => { const s = new Set(visibleUserIds); s.has(item.id) ? s.delete(item.id) : s.add(item.id); setVisibleUserIds(s); }} className={`p-6 rounded-[1.5rem] border transition-all shadow-lg ${visibleUserIds.has(item.id) ? 'bg-white text-black border-white' : 'bg-white/5 border-white/5 text-white/40 hover:bg-white/10 hover:text-white'}`}><IconEye /></button>
+                                </div>
+                             </div>
+
+                             {/* MASKED PASSWORD FIELD */}
+                             <div className="space-y-3">
+                                <div className="flex justify-between items-center px-2">
+                                   <p className="text-[10px] text-gray-500 uppercase tracking-widest font-black">Pass: {visiblePassIds.has(item.id) ? 'Showing' : 'Hidden'}</p>
+                                   <button onClick={() => copyToClipboard(item.pass, 'Pass')} className="text-[10px] text-blue-400 font-black hover:text-white transition-colors uppercase tracking-widest">Copy</button>
+                                </div>
+                                <div className="flex items-center gap-4">
+                                  <div className="flex-1 bg-black/60 p-6 rounded-[1.5rem] font-mono text-sm border border-white/5 truncate text-white/80 shadow-inner group-hover:border-white/10 transition-colors">
+                                    {visiblePassIds.has(item.id) ? item.pass : '••••••••••••'}
+                                  </div>
+                                  <button onClick={() => { const s = new Set(visiblePassIds); s.has(item.id) ? s.delete(item.id) : s.add(item.id); setVisiblePassIds(s); }} className={`p-6 rounded-[1.5rem] border transition-all shadow-lg ${visiblePassIds.has(item.id) ? 'bg-white text-black border-white' : 'bg-white/5 border-white/5 text-white/40 hover:bg-white/10 hover:text-white'}`}><IconEye /></button>
+                                </div>
+                             </div>
+                          </div>
+                          <div className="mt-12 pt-8 border-t border-white/5 flex justify-between items-center">
+                             <span className="text-[10px] font-mono text-gray-700 uppercase tracking-[0.3em] font-black">{formatDate(item.date)}</span>
+                             <div className="px-4 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-[8px] font-black text-blue-400 uppercase tracking-widest">Verified Vault</div>
+                          </div>
+                       </div>
+                     ))
+                   )}
+                </div>
+              </div>
+            ) : view === 'files' ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 animate-reveal">
+                 {/* UPLOAD CARD */}
+                 <div onClick={() => setShowUploadModal(true)} className="glass-card rounded-[4rem] p-12 flex flex-col items-center justify-center text-center cursor-pointer hover-lift border-dashed border-2 border-white/10 min-h-[350px]">
+                    <div className="w-24 h-24 rounded-full bg-white text-black flex items-center justify-center mb-8 shadow-2xl animate-float"><IconUpload /></div>
+                    <h3 className="text-3xl font-black mb-3">Upload Data</h3>
+                    <p className="text-gray-500 font-bold uppercase tracking-widest text-xs">Encrypt new assets</p>
+                 </div>
+                 {/* FILE LIST */}
+                 {(files[currentUser!] || []).map((file, i) => (
+                    <div key={file.id} className="glass-card rounded-[4rem] p-10 flex flex-col justify-between hover-lift min-h-[350px] animate-reveal shadow-2xl border border-white/5" style={{animationDelay: `${i*0.1}s`, animationFillMode: 'forwards'}}>
+                       <div>
+                          <div className="w-16 h-16 rounded-3xl bg-white/5 flex items-center justify-center mb-8 shadow-inner"><IconFile className="text-blue-500 w-8 h-8" /></div>
+                          <h4 className="text-3xl font-black mb-2 truncate tracking-tight">{file.name}</h4>
+                          <div className="flex items-center gap-3">
+                             <span className="text-[10px] text-gray-500 font-mono font-black uppercase tracking-widest">{formatSize(file.size)}</span>
+                             <div className="w-1 h-1 rounded-full bg-white/20"></div>
+                             <span className="text-[10px] text-gray-500 font-mono font-black uppercase tracking-widest">{formatDate(file.uploadDate)}</span>
+                          </div>
+                       </div>
+                       <div className="flex gap-4 mt-12">
+                          <button onClick={() => { const l = document.createElement('a'); l.href = file.data; l.download = file.name; l.click(); showNotif('Asset Decrypted', 'success'); }} className="flex-1 bg-white text-black py-5 rounded-[1.5rem] font-black text-xs uppercase tracking-widest hover:scale-[1.03] transition-transform flex items-center justify-center gap-3 shadow-xl"><IconDownload /> Save</button>
+                          <button onClick={async () => { const u = files[currentUser!].filter(f => f.id !== file.id); setFiles({...files, [currentUser!]: u}); await saveData(`files/${currentUser!}`, u); showNotif('Erased', 'success'); }} className="w-16 h-16 bg-red-500/10 text-red-500 rounded-[1.5rem] hover:bg-red-500 hover:text-white transition-all flex items-center justify-center shadow-lg border border-red-500/20"><IconX /></button>
+                       </div>
+                    </div>
+                 ))}
+              </div>
+            ) : (
+              <div className="max-w-4xl mx-auto space-y-10 animate-reveal">
+                 <div className="glass-card rounded-[4rem] p-12 border border-white/10 shadow-2xl">
+                    <p className="text-[10px] text-gray-600 uppercase tracking-[0.4em] font-black mb-6 ml-2">Secure Broadcast</p>
+                    <textarea value={newNote} onChange={e => setNewNote(e.target.value)} placeholder="Intercept intel..." className="w-full bg-transparent border-none resize-none font-bold text-3xl outline-none mb-10 min-h-[180px] placeholder-gray-800" />
+                    <div className="flex justify-end"><button onClick={async () => { if(!newNote.trim()) return; const n = { id: Date.now(), userId: currentUser!, user: currentUserData.name, text: newNote, date: new Date().toISOString() }; const u = [n, ...notes]; setNotes(u); setNewNote(''); await saveData('notes', u); showNotif('Message Transmitted', 'success'); }} className="bg-white text-black px-16 py-5 rounded-3xl font-black uppercase tracking-[0.2em] hover:scale-105 transition-transform shadow-[0_15px_40px_rgba(255,255,255,0.1)] text-xs">Transmit</button></div>
+                 </div>
+                 <div className="grid grid-cols-1 gap-8">
+                    {notes.map((note, i) => (
+                       <div key={note.id} className="glass-card rounded-[3rem] p-10 hover-lift animate-reveal" style={{animationDelay: `${i*0.05}s`, animationFillMode: 'forwards'}}>
+                          <div className="flex justify-between items-center mb-6">
+                             <div className="flex items-center gap-3">
+                                <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                                <span className="text-xs font-black text-white uppercase tracking-widest">{note.user}</span>
+                             </div>
+                             <span className="text-[10px] text-gray-500 font-mono font-black">{formatDate(note.date)}</span>
+                          </div>
+                          <p className="text-2xl font-medium leading-relaxed text-gray-200">{note.text}</p>
+                       </div>
+                    ))}
+                 </div>
+              </div>
+            )}
+          </div>
+          
+          {/* VERSION FOOTER */}
+          <div className="mt-32 text-center">
+             <p className="text-[9px] font-black text-gray-800 uppercase tracking-[0.5em]">{CONFIG.CREDITS_TEXT}</p>
+          </div>
+        </div>
+      )}
+
+      {/* MODALS */}
+      {showLogoutConfirm && (
+        <div className="fixed inset-0 bg-black/95 z-[9999] flex items-center justify-center p-6 animate-morph" onClick={() => setShowLogoutConfirm(false)}>
+           <div className="glass-card rounded-[4rem] p-16 text-center max-w-md w-full border border-white/10" onClick={e => e.stopPropagation()}>
+              <div className="w-24 h-24 rounded-full bg-red-500/10 text-red-500 flex items-center justify-center mx-auto mb-8 shadow-inner"><IconWarning /></div>
+              <h2 className="text-3xl font-black mb-6 tracking-tight">Terminate Session?</h2>
+              <p className="text-gray-500 mb-10 font-bold text-sm leading-relaxed uppercase tracking-widest">Secure access will be revoked immediately.</p>
+              <div className="flex gap-5">
+                 <button onClick={handleLogout} className="flex-1 bg-red-600 text-white py-5 rounded-[1.5rem] font-black uppercase text-xs tracking-widest hover:scale-[1.03] transition-transform shadow-xl">Log Off</button>
+                 <button onClick={() => setShowLogoutConfirm(false)} className="flex-1 bg-white/5 text-white py-5 rounded-[1.5rem] font-black uppercase text-xs tracking-widest hover:bg-white/10 transition-all">Cancel</button>
+              </div>
+           </div>
+        </div>
+      )}
+
+      {showUploadModal && (
+        <div className="fixed inset-0 bg-black/95 z-[9999] flex items-center justify-center p-6 animate-morph" onClick={() => setShowUploadModal(false)}>
+           <div className="glass-card rounded-[4rem] p-16 max-w-xl w-full border border-white/10" onClick={e => e.stopPropagation()}>
+              <h2 className="text-4xl font-black mb-10 tracking-tight">Secure Upload</h2>
+              <div className="relative group">
+                 <input type="file" multiple onChange={async (e) => { 
+                   const fl = e.target.files; if(!fl) return;
+                   const pr = []; for(let i=0; i<fl.length; i++) {
+                     const f = fl[i]; const r = new FileReader();
+                     pr.push(new Promise(rs => { r.onload = ev => rs({ id: Date.now()+i, name: f.name, data: ev.target?.result as string, size: f.size, type: f.type, uploadDate: new Date().toISOString() }); r.readAsDataURL(f); }));
+                   }
+                   const res = await Promise.all(pr) as FileData[];
+                   const u = [...(files[currentUser!] || []), ...res];
+                   setFiles({...files, [currentUser!]: u}); await saveData(`files/${currentUser!}`, u);
+                   setShowUploadModal(false); showNotif(`${res.length} assets encrypted`, 'success');
+                 }} className="w-full bg-white/5 border-2 border-dashed border-white/10 rounded-[2.5rem] p-16 text-center cursor-pointer file:hidden hover:border-white/20 transition-all" />
+                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                    <div className="w-16 h-16 bg-white text-black rounded-full flex items-center justify-center mb-4"><IconUpload /></div>
+                    <p className="text-sm font-black text-gray-400 uppercase tracking-widest">Drop multi-files here</p>
+                 </div>
+              </div>
+           </div>
+        </div>
       )}
     </div>
   );
