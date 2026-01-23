@@ -39,96 +39,60 @@
       padding: 20px;
     }
 
-    @keyframes flyIn3D {
-      0% {
-        opacity: 0;
-        transform: translateY(-100px) scale(0.5) rotateX(45deg) rotateY(10deg);
-        filter: blur(10px);
-      }
-      60% {
-        transform: translateY(10px) scale(1.05) rotateX(-5deg) rotateY(-2deg);
-        filter: blur(0px);
-      }
-      100% {
-        opacity: 1;
-        transform: translateY(0) scale(1) rotateX(0) rotateY(0);
-      }
-    }
-
     @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    @keyframes staggerFadeIn {
-      from { opacity: 0; transform: translateY(20px); filter: blur(4px); }
+      from { opacity: 0; transform: translateY(20px); filter: blur(5px); }
       to { opacity: 1; transform: translateY(0); filter: blur(0px); }
     }
 
-    .animate-fly-in { animation: flyIn3D 0.8s var(--ease-spring) forwards; }
-    .animate-fade-in { animation: fadeIn 0.5s var(--ease-out-expo) forwards; }
-    .animate-stagger-fade { animation: staggerFadeIn 0.6s var(--ease-out-expo) forwards; opacity: 0; }
-
-    @keyframes samsungFlipOpen {
-      0% {
-        opacity: 0;
-        transform: rotateX(-90deg) scale(0.8) translateY(100px);
-        filter: brightness(0.2) blur(10px);
-      }
-      100% {
-        opacity: 1;
-        transform: rotateX(0deg) scale(1) translateY(0);
-        filter: brightness(1) blur(0px);
-      }
+    @keyframes revealStagger {
+      0% { opacity: 0; transform: translateY(40px) scale(0.92); }
+      100% { opacity: 1; transform: translateY(0) scale(1); }
     }
 
-    .animate-flip-open {
-      animation: samsungFlipOpen 0.8s var(--ease-out-expo) forwards;
-      transform-origin: top center;
-    }
-
-    @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+    @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
     @keyframes scan { 0% { top: -100%; } 100% { top: 200%; } }
     @keyframes shuttle { 0% { left: -100%; width: 20%; } 50% { left: 40%; width: 40%; } 100% { left: 100%; width: 20%; } }
 
+    .animate-morph { animation: fadeIn 0.7s var(--ease-morph) forwards; }
+    .animate-reveal { animation: revealStagger 0.6s var(--ease-out-expo) forwards; opacity: 0; }
     .animate-float { animation: float 6s ease-in-out infinite; }
     .animate-scan { animation: scan 3s linear infinite; }
     .animate-shuttle { animation: shuttle 1.5s ease-in-out infinite; }
-    .animate-morph { animation: fadeIn 0.6s var(--ease-morph) forwards; }
 
     .glass {
-      background: rgba(255, 255, 255, 0.03);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: rgba(255, 255, 255, 0.02);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
     }
     
     .glass-card {
-      background: rgba(18, 18, 18, 0.85);
+      background: rgba(14, 14, 14, 0.85);
       backdrop-filter: blur(40px);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      box-shadow: 0 40px 80px -20px rgba(0, 0, 0, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      box-shadow: 0 40px 80px -20px rgba(0, 0, 0, 0.9);
     }
 
-    .hover-morph {
+    .hover-lift {
       transition: all 0.4s var(--ease-out-expo);
     }
-    .hover-morph:hover {
-      transform: scale(1.05) translateY(-5px);
-      background: rgba(255, 255, 255, 0.08);
-      border-color: rgba(59, 130, 246, 0.5);
+    .hover-lift:hover {
+      transform: scale(1.03) translateY(-6px);
+      background: rgba(255, 255, 255, 0.07);
+      border-color: rgba(255, 255, 255, 0.15);
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
     }
 
     .input-premium {
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.06);
       color: white;
       transition: all 0.3s var(--ease-morph);
     }
     .input-premium:focus {
-      border-color: #3b82f6;
-      background: rgba(255, 255, 255, 0.1);
-      box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+      border-color: rgba(255, 255, 255, 0.4);
+      background: rgba(255, 255, 255, 0.08);
+      box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.05);
       outline: none;
     }
 
